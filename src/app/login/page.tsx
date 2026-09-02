@@ -1,12 +1,28 @@
 import type { Metadata } from "next";
 import { Brand } from "@/components/Brand";
-import { Button } from "@/components/ui/Button";
+import { SignInButton } from "./SignInButton";
 
 export const metadata: Metadata = {
   title: "Sign in — Casedeck",
 };
 
-export default function LoginPage() {
+const errorMessages: Record<string, string> = {
+  domain: "Please sign in with your @isb.edu account.",
+  auth: "Something went wrong while signing you in. Please try again.",
+};
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
+  const errorMessage = error
+    ? Object.hasOwn(errorMessages, error)
+      ? errorMessages[error]
+      : errorMessages.auth
+    : null;
+
   return (
     <div className="grid min-h-screen bg-[var(--canvas)] lg:grid-cols-[1.1fr_0.9fr]">
       <div className="flex flex-col justify-between gap-12 px-8 py-10 lg:px-[68px] lg:py-14">
@@ -33,9 +49,15 @@ export default function LoginPage() {
               devices.
             </p>
           </div>
-          <Button disabled className="h-11 w-full text-[14.5px]">
-            Sign in with Microsoft
-          </Button>
+          {errorMessage && (
+            <p
+              role="alert"
+              className="rounded-[var(--rs)] bg-[var(--amber-50)] px-3.5 py-2.5 text-[13px] font-medium text-[var(--amber)]"
+            >
+              {errorMessage}
+            </p>
+          )}
+          <SignInButton />
         </div>
       </div>
     </div>

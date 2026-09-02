@@ -3,8 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import { Brand } from "@/components/Brand";
+import { createClient } from "@/lib/supabase/client";
+
+export interface ShellUser {
+  name: string;
+  email: string;
+  initials: string;
+}
 
 interface NavItem {
   label: string;
@@ -52,25 +59,51 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-function UserSection() {
+function UserSection({ user }: { user: ShellUser }) {
+  const [signingOut, setSigningOut] = useState(false);
+
+  const signOut = async () => {
+    setSigningOut(true);
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    // Full navigation so all server components re-render unauthenticated.
+    window.location.assign("/login");
+  };
+
   return (
     <div className="flex items-center gap-[9px] border-t border-[var(--line-soft)] px-[18px] pt-3.5">
       <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full bg-[var(--amber-50)] text-[12px] font-bold text-[var(--amber)]">
-        S
+        {user.initials}
       </span>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p className="truncate text-[13px] font-semibold leading-tight text-[var(--ink)]">
-          Student
+          {user.name}
         </p>
         <p className="truncate text-[11px] font-medium text-[var(--muted)]">
-          Campus · ISB Co&apos;27
+          {user.email}
         </p>
       </div>
+      <button
+        type="button"
+        onClick={signOut}
+        disabled={signingOut}
+        aria-label="Sign out"
+        title="Sign out"
+        className="shrink-0 rounded-[var(--rs)] p-1.5 text-[var(--muted)] transition-colors hover:bg-[var(--thead)] hover:text-[var(--ink)] disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <LogOut size={15} />
+      </button>
     </div>
   );
 }
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  user,
+  children,
+}: {
+  user: ShellUser;
+  children: React.ReactNode;
+}) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const closeDrawer = () => setDrawerOpen(false);
 
@@ -84,7 +117,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex-1 px-3">
           <NavLinks />
         </div>
-        <UserSection />
+        <UserSection user={user} />
       </aside>
 
       {/* Mobile top bar */}
@@ -124,7 +157,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="flex-1 px-3">
               <NavLinks onNavigate={closeDrawer} />
             </div>
-            <UserSection />
+            <UserSection user={user} />
           </div>
         </div>
       )}

@@ -29,6 +29,19 @@ Casedeck (formerly CasePrep) — case interview prep platform for ISB students. 
 - **Fonts** (next/font/google, variables on `<body>`): `--font-display` Instrument Serif 400 normal+italic (all headings, weight 400, tight line-height — h1–h4 styled globally in globals.css); `--font-ui` Plus Jakarta Sans 400–700 (body, 15px/1.55); `--font-mono` IBM Plex Mono 400/500 (source-file lines, e.g. `font-[family-name:var(--font-mono)]`).
 - **Component patterns**: white cards with `--line` border, `--r` radius, `--sh` shadow; buttons 40px tall, `--rs` radius, 13.5px semibold (primary solid accent, secondary outline); pills via `Pill` tones (`chip` neutral, `accent` for case type/done, `amber` for ★ ratings); table headers uppercase 11px letter-spaced on `--thead`; filter rows = 96px muted label + wrapping pill chips (selected = accent bg, white text); sidebar 238px white with dot-indicator nav (active = accent on accent-50 pill); brand mark = 26px/7px-radius accent square with white bold "C" + bold wordmark (`src/components/Brand.tsx`).
 
+## Auth
+
+Microsoft (Azure) OAuth via Supabase Auth, restricted to `@isb.edu` accounts.
+
+- **Flow**: `/login` → `SignInButton` (browser client, `signInWithOAuth({ provider: 'azure' })`, redirectTo `/auth/callback`) → `src/app/auth/callback/route.ts` exchanges the code for a session → redirect to `/cases`.
+- **Two-layer @isb.edu enforcement, server-side only** (`isIsbEmail` in `src/lib/auth.ts`):
+  1. Callback: non-ISB email → the auth user is deleted via the service-role admin client (`src/lib/supabase/admin.ts`, guarded by `import "server-only"` — never import it into client code), session dropped, redirect `/login?error=domain`.
+  2. Proxy: every request re-validates with `getUser()` (never `getSession`); a session with a non-ISB email is signed out and bounced. `(app)/layout.tsx` repeats both checks as belt-and-braces.
+  - ⚠️ The Azure provider is **multi-tenant**, so the gate rests on the Azure `email` claim; a hostile tenant could self-assert an @isb.edu email. Locking the Azure app registration to the ISB tenant (or verifying tenant id) is the real fix — revisit before launch.
+- **Route protection**: `src/proxy.ts` (Next 16 renamed middleware → proxy). Runs on everything except `_next` assets and dotted files; refreshes the session per the @supabase/ssr cookie pattern (cookies are copied onto redirect responses). Unauthenticated → `/login`; authenticated visiting `/login` → `/cases`.
+- **Adding a public route**: add its path to `PUBLIC_PATHS` in `src/proxy.ts` (exact or prefix match).
+- `/login?error=domain|auth` drives the error banner on the login page.
+
 ## Database
 
 Schema lives in `supabase/migrations/0001_init.sql` (applied manually in the Supabase SQL editor). TypeScript mirrors in `src/lib/types.ts`; clients in `src/lib/supabase/` (`client.ts` browser, `server.ts` cookie-based SSR).
@@ -58,10 +71,9 @@ Schema lives in `supabase/migrations/0001_init.sql` (applied manually in the Sup
 - **Phase 0.1: app shell — DONE** (routes, sidebar/drawer layout, UI primitives, placeholder pages, design tokens)
 - **Phase 0.2: Supabase + schema — DONE** (supabase-js + ssr clients, full migration with RLS + triggers + private storage bucket, shared types)
 - **Theme: Casedeck design system — DONE** (rename CasePrep → Casedeck, new tokens/fonts, full reskin of shell + all placeholder pages)
+- **Phase 0.3: Microsoft auth + isb.edu enforcement — DONE** (Azure OAuth, callback with admin cleanup, proxy session refresh + route protection, real user footer with sign-out). **Phase 0 complete.**
 
 Upcoming:
-
-- Phase 0.3: Microsoft auth (@isb.edu enforcement) — must add auth middleware/proxy for session refresh (server client's `setAll` relies on it)
 - Phase 1: content pipeline
 - Phase 2: case library
 - Phase 3: tracking
