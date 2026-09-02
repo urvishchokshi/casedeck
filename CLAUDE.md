@@ -21,6 +21,19 @@ CasePrep — case interview prep platform for ISB students. Case library with fi
 - Everything strictly typed. No `any`.
 - Server components by default; add `"use client"` only where interactivity requires it.
 
+## Database
+
+Schema lives in `supabase/migrations/0001_init.sql` (applied manually in the Supabase SQL editor). TypeScript mirrors in `src/lib/types.ts`; clients in `src/lib/supabase/` (`client.ts` browser, `server.ts` cookie-based SSR).
+
+- `profiles` — one row per user, auto-created by a trigger on `auth.users` insert; `is_admin` is protected by column-level grants (users can only update `full_name`/`campus`)
+- `casebooks` — one per IIM casebook (`slug` unique, optional `pdf_url` for downloads)
+- `cases` — case content: transcript jsonb, solution/exhibit image URLs, filters (industry, case_type, difficulty), rating aggregates (`avg_rating`, `rating_count` maintained by trigger). **Idempotency key: `UNIQUE (casebook_id, source_file)`** — re-imports overwrite in place
+- `user_case_progress` — per-user per-case: completed, marked_for_later, self_score (1–10), quality_rating (1–5); `UNIQUE (user_id, case_id)`
+- `match_profiles` — partner-matching profile, one row per user (PK = user_id)
+- Enums: `difficulty_level`, `partner_status`, `mode_pref`, `campus_type`
+- RLS enabled on all tables: users read shared content and write only their own rows; casebooks/cases/storage writes are service-role only (import pipeline)
+- Storage: **private** bucket `case-images` (authenticated read; service-role writes). Serve via signed URLs.
+
 ## Database rules
 
 - Schema changes ONLY via new numbered files in `supabase/migrations/` — never edit an already-applied migration.
@@ -35,11 +48,11 @@ CasePrep — case interview prep platform for ISB students. Case library with fi
 ## Status
 
 - **Phase 0.1: app shell — DONE** (routes, sidebar/drawer layout, UI primitives, placeholder pages, design tokens)
+- **Phase 0.2: Supabase + schema — DONE** (supabase-js + ssr clients, full migration with RLS + triggers + private storage bucket, shared types)
 
 Upcoming:
 
-- Phase 0.2: Supabase + schema
-- Phase 0.3: Microsoft auth (@isb.edu enforcement)
+- Phase 0.3: Microsoft auth (@isb.edu enforcement) — must add auth middleware/proxy for session refresh (server client's `setAll` relies on it)
 - Phase 1: content pipeline
 - Phase 2: case library
 - Phase 3: tracking
