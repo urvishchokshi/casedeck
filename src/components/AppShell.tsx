@@ -3,45 +3,28 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  BookOpen,
-  LayoutDashboard,
-  Library,
-  Menu,
-  Shapes,
-  Users,
-  X,
-  type LucideIcon,
-} from "lucide-react";
+import { Menu, X } from "lucide-react";
+import { Brand } from "@/components/Brand";
 
 interface NavItem {
   label: string;
   href: string;
-  icon: LucideIcon;
 }
 
 const navItems: NavItem[] = [
-  { label: "Cases", href: "/cases", icon: BookOpen },
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Find a Partner", href: "/match", icon: Users },
-  { label: "Casebooks", href: "/casebooks", icon: Library },
-  { label: "Frameworks", href: "/frameworks", icon: Shapes },
+  { label: "Cases", href: "/cases" },
+  { label: "Dashboard", href: "/dashboard" },
+  { label: "Find a Partner", href: "/match" },
+  { label: "Casebooks", href: "/casebooks" },
+  { label: "Frameworks", href: "/frameworks" },
 ];
-
-function Wordmark() {
-  return (
-    <span className="text-[length:var(--font-size-lg)] font-bold tracking-tight text-[var(--color-accent)]">
-      CasePrep
-    </span>
-  );
-}
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-col gap-1">
-      {navItems.map(({ label, href, icon: Icon }) => {
+    <nav className="flex flex-col gap-0.5">
+      {navItems.map(({ label, href }) => {
         const active = pathname === href || pathname.startsWith(`${href}/`);
         return (
           <Link
@@ -49,13 +32,18 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
             href={href}
             onClick={onNavigate}
             aria-current={active ? "page" : undefined}
-            className={`flex items-center gap-3 rounded-[var(--radius-control)] px-3 py-2 text-[length:var(--font-size-sm)] font-medium transition-colors ${
+            className={`flex items-center gap-2.5 rounded-[var(--rs)] px-3 py-2 text-[13.5px] font-semibold transition-colors ${
               active
-                ? "bg-[var(--color-accent)] text-[var(--color-accent-foreground)]"
-                : "text-[var(--color-text-muted)] hover:bg-[var(--color-accent-soft)] hover:text-[var(--color-text)]"
+                ? "bg-[var(--accent-50)] text-[var(--accent)]"
+                : "text-[var(--muted)] hover:bg-[var(--thead)] hover:text-[var(--ink)]"
             }`}
           >
-            <Icon size={18} />
+            <span
+              aria-hidden
+              className={`h-1.5 w-1.5 rounded-full ${
+                active ? "bg-[var(--accent)]" : "bg-transparent"
+              }`}
+            />
             {label}
           </Link>
         );
@@ -66,16 +54,16 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 
 function UserSection() {
   return (
-    <div className="flex items-center gap-3 border-t border-[var(--color-border)] pt-4">
-      <span className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-pill)] bg-[var(--color-accent-soft)] text-[length:var(--font-size-sm)] font-semibold text-[var(--color-accent)]">
+    <div className="flex items-center gap-[9px] border-t border-[var(--line-soft)] px-[18px] pt-3.5">
+      <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full bg-[var(--amber-50)] text-[12px] font-bold text-[var(--amber)]">
         S
       </span>
       <div className="min-w-0">
-        <p className="truncate text-[length:var(--font-size-sm)] font-medium text-[var(--color-text)]">
+        <p className="truncate text-[13px] font-semibold leading-tight text-[var(--ink)]">
           Student
         </p>
-        <p className="truncate text-[length:var(--font-size-xs)] text-[var(--color-text-muted)]">
-          ISB Co&apos;27
+        <p className="truncate text-[11px] font-medium text-[var(--muted)]">
+          Campus · ISB Co&apos;27
         </p>
       </div>
     </div>
@@ -89,24 +77,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen">
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)] p-4 lg:flex">
-        <div className="px-3 py-2">
-          <Wordmark />
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[238px] flex-col border-r border-[var(--line)] bg-[var(--card)] py-5 lg:flex">
+        <div className="px-[18px] pb-5">
+          <Brand />
         </div>
-        <div className="mt-6 flex-1">
+        <div className="flex-1 px-3">
           <NavLinks />
         </div>
         <UserSection />
       </aside>
 
       {/* Mobile top bar */}
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 lg:hidden">
-        <Wordmark />
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[var(--line)] bg-[var(--card)] px-4 py-3 lg:hidden">
+        <Brand />
         <button
           type="button"
           onClick={() => setDrawerOpen(true)}
           aria-label="Open navigation menu"
-          className="rounded-[var(--radius-control)] p-2 text-[var(--color-text)] hover:bg-[var(--color-accent-soft)]"
+          className="rounded-[var(--rs)] p-2 text-[var(--ink)] hover:bg-[var(--thead)]"
         >
           <Menu size={22} />
         </button>
@@ -119,21 +107,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             type="button"
             aria-label="Close navigation menu"
             onClick={closeDrawer}
-            className="absolute inset-0 bg-[var(--color-text)]/40"
+            className="absolute inset-0 bg-[var(--ink)]/40"
           />
-          <div className="absolute inset-y-0 left-0 flex w-64 flex-col bg-[var(--color-surface)] p-4 shadow-xl">
-            <div className="flex items-center justify-between px-3 py-2">
-              <Wordmark />
+          <div className="absolute inset-y-0 left-0 flex w-64 flex-col bg-[var(--card)] py-5 shadow-xl">
+            <div className="flex items-center justify-between px-[18px] pb-5">
+              <Brand />
               <button
                 type="button"
                 onClick={closeDrawer}
                 aria-label="Close navigation menu"
-                className="rounded-[var(--radius-control)] p-2 text-[var(--color-text)] hover:bg-[var(--color-accent-soft)]"
+                className="rounded-[var(--rs)] p-2 text-[var(--ink)] hover:bg-[var(--thead)]"
               >
                 <X size={20} />
               </button>
             </div>
-            <div className="mt-6 flex-1">
+            <div className="flex-1 px-3">
               <NavLinks onNavigate={closeDrawer} />
             </div>
             <UserSection />
@@ -141,8 +129,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <main className="px-4 py-8 sm:px-8 lg:ml-60 lg:px-12">
-        <div className="mx-auto max-w-6xl">{children}</div>
+      <main className="px-4 py-8 sm:px-8 lg:ml-[238px] lg:px-[38px]">
+        <div className="mx-auto max-w-[1360px]">{children}</div>
       </main>
     </div>
   );

@@ -1,98 +1,183 @@
 import Link from "next/link";
-import { Search, Star } from "lucide-react";
-import { PageHeader } from "@/components/PageHeader";
-import { Card } from "@/components/ui/Card";
 import { Pill } from "@/components/ui/Pill";
 
-const filterChips = [
-  "Difficulty",
-  "Industry",
-  "Case Type",
-  "Rating",
-  "Casebook",
-  "Status",
-] as const;
+interface FilterGroup {
+  label: string;
+  options: string[];
+}
+
+const filterGroups: FilterGroup[] = [
+  { label: "Difficulty", options: ["Easy", "Medium", "Hard"] },
+  { label: "Industry", options: ["Aviation", "FMCG", "Pharma", "Auto", "E-commerce", "BFSI"] },
+  { label: "Type", options: ["Profitability", "Market Entry", "Pricing", "Growth", "Operations"] },
+  { label: "Rating", options: ["4★ & up", "3★ & up", "Any"] },
+  { label: "Casebook", options: ["ISB 2025", "IIM A", "IIM B", "IIM C"] },
+  { label: "Status", options: ["Not started", "Done", "Marked for later"] },
+];
+
+type CaseStatus = "Done" | "Marked" | "Not started";
 
 interface PlaceholderCase {
   id: string;
   title: string;
-  tags: [string, string, string];
+  casebook: string;
+  source: string;
+  type: string;
+  industry: string;
+  difficulty: string;
+  rating: string;
+  status: CaseStatus;
 }
 
 const placeholderCases: PlaceholderCase[] = [
-  { id: "1", title: "Airline Profitability Decline", tags: ["Profitability", "Aviation", "Medium"] },
-  { id: "2", title: "FMCG Market Entry in Tier-2 Cities", tags: ["Market Entry", "FMCG", "Hard"] },
-  { id: "3", title: "Pharma Pricing Strategy", tags: ["Pricing", "Pharma", "Medium"] },
-  { id: "4", title: "EV Charging Network Expansion", tags: ["Growth", "Auto", "Hard"] },
-  { id: "5", title: "Quick-Commerce Unit Economics", tags: ["Profitability", "E-commerce", "Easy"] },
-  { id: "6", title: "Bank Digital Transformation", tags: ["Operations", "BFSI", "Medium"] },
+  { id: "1", title: "Airline Profitability Decline", casebook: "ISB 2025", source: "case-001 · p. 12", type: "Profitability", industry: "Aviation", difficulty: "Medium", rating: "4.0", status: "Done" },
+  { id: "2", title: "FMCG Market Entry in Tier-2 Cities", casebook: "IIM A", source: "case-014 · p. 48", type: "Market Entry", industry: "FMCG", difficulty: "Hard", rating: "4.3", status: "Not started" },
+  { id: "3", title: "Pharma Pricing Strategy", casebook: "IIM B", source: "case-007 · p. 63", type: "Pricing", industry: "Pharma", difficulty: "Medium", rating: "3.8", status: "Not started" },
+  { id: "4", title: "EV Charging Network Expansion", casebook: "ISB 2025", source: "case-019 · p. 91", type: "Growth", industry: "Auto", difficulty: "Hard", rating: "4.6", status: "Marked" },
+  { id: "5", title: "Quick-Commerce Unit Economics", casebook: "IIM C", source: "case-003 · p. 34", type: "Profitability", industry: "E-commerce", difficulty: "Easy", rating: "4.7", status: "Done" },
+  { id: "6", title: "Bank Digital Transformation", casebook: "IIM A", source: "case-022 · p. 118", type: "Operations", industry: "BFSI", difficulty: "Medium", rating: "4.1", status: "Not started" },
 ];
 
-function StarRating() {
-  return (
-    <div className="flex items-center gap-0.5 text-[var(--color-text-muted)]">
-      {Array.from({ length: 5 }, (_, i) => (
-        <Star
-          key={i}
-          size={14}
-          className={i < 4 ? "fill-current" : ""}
-        />
-      ))}
-      <span className="ml-1.5 text-[length:var(--font-size-xs)]">4.0</span>
-    </div>
+const thClasses =
+  "border-b border-[var(--line)] px-3 py-[11px] text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--muted)] first:pl-4 last:pr-4";
+const tdClasses =
+  "border-b border-[var(--line-soft)] px-3 py-2.5 text-[13px] first:pl-4 last:pr-4";
+
+function StatusPill({ status }: { status: CaseStatus }) {
+  return status === "Done" ? (
+    <Pill tone="accent">Done</Pill>
+  ) : status === "Marked" ? (
+    <Pill tone="amber">Marked</Pill>
+  ) : (
+    <Pill className="text-[var(--muted)]">Not started</Pill>
   );
 }
 
 export default function CasesPage() {
   return (
     <div>
-      <PageHeader
-        title="Case Library"
-        subtitle="Browse and practice cases from ISB casebooks"
-      />
-
-      <div className="relative">
-        <Search
-          size={16}
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]"
-        />
-        <input
-          type="search"
-          disabled
-          placeholder="Search cases…"
-          className="w-full rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)] py-2 pl-9 pr-3 text-[length:var(--font-size-sm)] text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] disabled:cursor-not-allowed disabled:opacity-60"
-        />
-      </div>
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        {filterChips.map((chip) => (
+      <div className="mb-[22px] flex flex-wrap items-end justify-between gap-6">
+        <div>
+          <h1 className="text-[40px] text-[var(--ink)]">Case library</h1>
+          <p className="mt-1 text-[14px] text-[var(--muted)]">
+            {placeholderCases.length} cases · placeholder data
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="search"
+            disabled
+            aria-label="Search cases"
+            placeholder="Search case, company, casebook…"
+            className="h-[38px] w-[290px] max-w-full rounded-full border border-[var(--line)] bg-[var(--card)] px-[13px] text-[13.5px] text-[var(--ink)] placeholder:text-[var(--muted)] disabled:cursor-not-allowed disabled:opacity-60"
+          />
           <button
-            key={chip}
             type="button"
             disabled
-            className="rounded-[var(--radius-pill)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-[length:var(--font-size-xs)] font-medium text-[var(--color-text-muted)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-[38px] whitespace-nowrap rounded-full border border-[var(--line)] bg-[var(--card)] px-[15px] text-[13.5px] font-semibold text-[var(--ink)] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {chip} ▾
+            Reset
           </button>
+        </div>
+      </div>
+
+      <div className="mb-[18px] flex flex-col gap-[11px] rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] px-[18px] py-4 [box-shadow:var(--sh)]">
+        {filterGroups.map((group) => (
+          <div
+            key={group.label}
+            className="grid grid-cols-1 items-center gap-2 sm:grid-cols-[96px_1fr] sm:gap-3.5"
+          >
+            <div className="text-[11.5px] font-semibold text-[var(--muted)]">
+              {group.label}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {group.options.map((option, i) => (
+                <button
+                  key={option}
+                  type="button"
+                  disabled
+                  className={`rounded-full px-[11px] py-1 text-[12px] font-semibold disabled:cursor-not-allowed ${
+                    i === 0 && group.label === "Rating"
+                      ? "bg-[var(--accent)] text-[var(--on-accent)]"
+                      : "border border-[var(--line)] bg-[var(--card)] text-[var(--ink)]"
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          </div>
         ))}
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {/* Desktop table */}
+      <div className="hidden overflow-hidden rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] [box-shadow:var(--sh)] md:block">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="bg-[var(--thead)]">
+              <th className={`${thClasses} w-[34%]`}>Case</th>
+              <th className={thClasses}>Casebook</th>
+              <th className={thClasses}>Type</th>
+              <th className={thClasses}>Difficulty</th>
+              <th className={thClasses}>Rating</th>
+              <th className={thClasses}>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {placeholderCases.map((c) => (
+              <tr
+                key={c.id}
+                className="relative transition-colors hover:bg-[var(--thead)]"
+              >
+                <td className={tdClasses}>
+                  <Link
+                    href={`/cases/${c.id}`}
+                    className="after:absolute after:inset-0"
+                  >
+                    <span className="block text-[15px] font-semibold leading-tight tracking-[-0.01em] text-[var(--ink)]">
+                      {c.title}
+                    </span>
+                    <span className="block font-[family-name:var(--font-mono)] text-[12px] text-[var(--muted)]">
+                      {c.casebook.toLowerCase().replace(/ /g, "-")} · {c.source}
+                    </span>
+                  </Link>
+                </td>
+                <td className={`${tdClasses} text-[var(--muted)]`}>{c.casebook}</td>
+                <td className={tdClasses}>{c.type}</td>
+                <td className={tdClasses}>{c.difficulty}</td>
+                <td className={`${tdClasses} font-semibold text-[var(--amber)]`}>
+                  ★ {c.rating}
+                </td>
+                <td className={tdClasses}>
+                  <StatusPill status={c.status} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile stacked cards */}
+      <div className="flex flex-col gap-3 md:hidden">
         {placeholderCases.map((c) => (
-          <Link key={c.id} href={`/cases/${c.id}`}>
-            <Card className="h-full transition-colors hover:border-[var(--color-accent)]">
-              <h2 className="text-[length:var(--font-size-base)] font-semibold text-[var(--color-text)]">
-                {c.title}
-              </h2>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {c.tags.map((tag) => (
-                  <Pill key={tag}>{tag}</Pill>
-                ))}
-              </div>
-              <div className="mt-4">
-                <StarRating />
-              </div>
-            </Card>
+          <Link
+            key={c.id}
+            href={`/cases/${c.id}`}
+            className="block rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] p-4 [box-shadow:var(--sh)]"
+          >
+            <div className="text-[15px] font-semibold leading-tight tracking-[-0.01em] text-[var(--ink)]">
+              {c.title}
+            </div>
+            <div className="mt-0.5 font-[family-name:var(--font-mono)] text-[12px] text-[var(--muted)]">
+              {c.casebook.toLowerCase().replace(/ /g, "-")} · {c.source}
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              <Pill tone="accent">{c.type}</Pill>
+              <Pill>{c.industry}</Pill>
+              <Pill>{c.difficulty}</Pill>
+              <Pill tone="amber">★ {c.rating}</Pill>
+              <StatusPill status={c.status} />
+            </div>
           </Link>
         ))}
       </div>

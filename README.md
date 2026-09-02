@@ -1,4 +1,4 @@
-# CasePrep
+# Casedeck
 
 Case interview preparation platform for ISB students — a central place to browse cases, track practice progress, find mock-interview partners, and access casebooks and frameworks during placement prep.
 
@@ -29,7 +29,7 @@ npm start
 
 ## Design system
 
-All colors, radii, and font sizes are CSS variables defined on `:root` in `src/app/globals.css`. Components only consume tokens via Tailwind arbitrary values (e.g. `bg-[var(--color-bg)]`) — no hardcoded hex values — so the entire theme can be swapped by editing that one file.
+The Casedeck theme (visual reference: `design/casedeck-v2.html`) is built on CSS variables defined on `:root` in `src/app/globals.css` — colors, radii, and shadows. Components only consume tokens via Tailwind arbitrary values (e.g. `bg-[var(--card)]`) — no hardcoded hex values — so the theme can be adjusted by editing that one file. Fonts: Instrument Serif for display headings, Plus Jakarta Sans for UI text, IBM Plex Mono for source-file/code accents (all via `next/font/google`).
 
 ## Project structure
 

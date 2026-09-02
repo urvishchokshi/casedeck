@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#171a19; --canvas:#f6f5f1; --card:#ffffff; --line:#e6e3db; --line-soft:#efece5;
+  --muted:#71756f; --accent:#15614e; --accent-50:#f0f6f3; --accent-100:#e0ede8; --accent-200:#bcd8ce;
+  --amber:#a4632c; --amber-50:#f9f0e7; --r:12px; --rs:8px;
+  --sh:0 1px 2px rgba(23,26,25,.05), 0 2px 10px rgba(23,26,25,.04);
+  --ui:"Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --display:"Instrument Serif", Georgia, serif;
+  --mono:"IBM Plex Mono", ui-monospace, monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;background:var(--canvas);color:var(--ink);font-family:var(--ui);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{margin:0;font-family:var(--display);font-weight:400;letter-spacing:-0.01em;line-height:1.05}
+p{margin:0}
+table{border-collapse:collapse;width:100%}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:#0f4a3c}
+button{font-family:var(--ui)}
+input{font-family:var(--ui)}
+input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+::selection{background:var(--accent-200)}
+::-webkit-scrollbar{width:11px;height:11px}
+::-webkit-scrollbar-thumb{background:#dcd8cf;border-radius:8px;border:3px solid var(--canvas)}
+</style>
+</helmet>
+
+<sc-if value="{{isSignin}}" hint-placeholder-val="{{ true }}">
+<div style="min-height:100vh;display:grid;grid-template-columns:1.1fr 0.9fr;background:var(--canvas)">
+  <div style="padding:56px 68px;display:flex;flex-direction:column;justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="width:26px;height:26px;border-radius:7px;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:700">C</span>
+      <span style="font-weight:700;font-size:16px;letter-spacing:-0.02em">Casedeck</span>
+    </div>
+    <div style="max-width:600px">
+      <div style="display:inline-flex;align-items:center;gap:8px;padding:5px 12px;border-radius:999px;background:var(--accent-50);border:1px solid var(--accent-100);color:var(--accent);font-size:12px;font-weight:600;margin-bottom:22px">Built by ISB Co'26 · used by 412 students</div>
+      <h1 style="font-size:76px;line-height:0.94;margin-bottom:20px">Every casebook,<br><span style="font-style:italic;color:var(--accent)">one shelf.</span></h1>
+      <p style="font-size:17px;color:var(--muted);max-width:460px;text-wrap:pretty">Filter 780 cases across 14 casebooks, log what you have done, see where you are weak, and find a partner who is free tonight.</p>
+      <div style="display:flex;gap:44px;margin-top:44px">
+        <div><div style="font-family:var(--display);font-size:40px;line-height:1">780</div><div style="font-size:12px;color:var(--muted);font-weight:500">Standardised cases</div></div>
+        <div><div style="font-family:var(--display);font-size:40px;line-height:1">14</div><div style="font-size:12px;color:var(--muted);font-weight:500">Casebooks</div></div>
+        <div><div style="font-family:var(--display);font-size:40px;line-height:1">412</div><div style="font-size:12px;color:var(--muted);font-weight:500">Students matching</div></div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--muted)">Hyderabad &amp; Mohali · placement season 2027</div>
+  </div>
+  <div style="display:grid;place-items:center;padding:48px;background:linear-gradient(180deg,#f1efe9,#eae7df)">
+    <div style="width:372px;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--sh);padding:30px;display:flex;flex-direction:column;gap:16px">
+      <div>
+        <h3 style="font-size:28px;margin-bottom:6px">Sign in</h3>
+        <p style="font-size:13.5px;color:var(--muted)">Use your ISB email. Your cases and stats sync across devices.</p>
+      </div>
+      <label style="display:flex;flex-direction:column;gap:6px;font-size:12.5px;font-weight:600;color:var(--muted)">ISB email
+        <input value="aditi_rao_2027@isb.edu" readonly style="height:42px;padding:0 12px;border:1px solid var(--line);border-radius:var(--rs);background:#fbfaf8;font-size:14px;color:var(--ink)">
+      </label>
+      <label style="display:flex;flex-direction:column;gap:6px;font-size:12.5px;font-weight:600;color:var(--muted)">Password
+        <input type="password" value="............" readonly style="height:42px;padding:0 12px;border:1px solid var(--line);border-radius:var(--rs);background:#fbfaf8;font-size:14px;color:var(--ink)">
+      </label>
+      <button onClick="{{ signIn }}" style="height:44px;border:0;border-radius:var(--rs);background:var(--accent);color:#fff;font-size:14.5px;font-weight:600;cursor:pointer">Enter Casedeck</button>
+      <div style="display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px"><span style="flex:1;height:1px;background:var(--line)"></span>or<span style="flex:1;height:1px;background:var(--line)"></span></div>
+      <button onClick="{{ signIn }}" style="height:42px;border:1px solid var(--line);border-radius:var(--rs);background:var(--card);color:var(--ink);font-size:14px;font-weight:600;cursor:pointer">Continue with ISB SSO</button>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{isApp}}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;min-height:100vh;background:var(--canvas)">
+
+  <aside style="width:238px;flex:none;background:var(--card);border-right:1px solid var(--line);padding:20px 0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh">
+    <div style="padding:0 18px 20px;display:flex;align-items:center;gap:9px">
+      <span style="width:26px;height:26px;border-radius:7px;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:700">C</span>
+      <span style="font-weight:700;font-size:15.5px;letter-spacing:-0.02em">Casedeck</span>
+    </div>
+    <nav style="display:flex;flex-direction:column;gap:2px;padding:0 12px">
+      <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="5">
+        <a href="#" onClick="{{ n.go }}" style="{{ n.style }}">
+          <span style="{{ n.dot }}"></span>
+          <span>{{ n.label }}</span>
+          <span style="{{ n.badgeStyle }}">{{ n.badge }}</span>
+        </a>
+      </sc-for>
+    </nav>
+    <div style="margin:auto 12px 0;padding:14px;border-radius:var(--r);background:var(--accent-50);border:1px solid var(--accent-100)">
+      <div style="font-size:11.5px;font-weight:600;color:var(--accent);letter-spacing:0.02em">Interviews start in</div>
+      <div style="font-family:var(--display);font-size:32px;line-height:1.1">31 days</div>
+      <div style="height:5px;border-radius:4px;background:var(--accent-200);margin:8px 0 4px;overflow:hidden"><span style="display:block;height:100%;width:62%;background:var(--accent)"></span></div>
+      <div style="font-size:11.5px;color:var(--muted)">29 of 45 target cases done</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:9px;padding:14px 18px 0;margin-top:14px;border-top:1px solid var(--line-soft)">
+      <span style="width:30px;height:30px;border-radius:50%;background:var(--amber-50);color:var(--amber);display:grid;place-items:center;font-size:12px;font-weight:700">AR</span>
+      <span style="font-size:13px;font-weight:600;line-height:1.15">Aditi Rao<br><span style="font-size:11px;font-weight:500;color:var(--muted)">Hyderabad · Co 2027</span></span>
+    </div>
+  </aside>
+
+  <main style="flex:1;min-width:0">
+
+    <!-- LIBRARY -->
+    <sc-if value="{{ isLibrary }}" hint-placeholder-val="{{ true }}">
+    <div style="padding:32px 38px 64px;max-width:1360px">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:22px">
+        <div>
+          <h2 style="font-size:40px;margin-bottom:4px">Case library</h2>
+          <p style="font-size:14px;color:var(--muted)">{{ resultLine }}</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input placeholder="Search case, company, casebook…" value="{{ query }}" onChange="{{ onQuery }}" style="width:290px;height:38px;padding:0 13px;border:1px solid var(--line);border-radius:999px;background:var(--card);font-size:13.5px">
+          <button onClick="{{ clearFilters }}" style="white-space:nowrap;height:38px;padding:0 15px;border:1px solid var(--line);border-radius:999px;background:var(--card);font-size:13.5px;font-weight:600;cursor:pointer;color:var(--ink)">Reset</button>
+        </div>
+      </div>
+
+      <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px 18px;margin-bottom:18px;display:flex;flex-direction:column;gap:11px">
+        <sc-for list="{{ filterGroups }}" as="g" hint-placeholder-count="5">
+          <div style="display:grid;grid-template-columns:96px 1fr;gap:14px;align-items:center">
+            <div style="font-size:11.5px;font-weight:600;color:var(--muted)">{{ g.label }}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <sc-for list="{{ g.options }}" as="o" hint-placeholder-count="5">
+                <button onClick="{{ o.toggle }}" style="{{ o.style }}">{{ o.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-bottom:10px">
+        <span style="font-size:11.5px;font-weight:600;color:var(--muted)">Sort by</span>
+        <sc-for list="{{ sorts }}" as="s" hint-placeholder-count="3">
+          <button onClick="{{ s.pick }}" style="{{ s.style }}">{{ s.label }}</button>
+        </sc-for>
+      </div>
+
+      <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden">
+        <table>
+          <thead><tr style="background:#fbfaf7">
+            <th style="text-align:left;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);padding:11px 16px;border-bottom:1px solid var(--line);width:34%">Case</th>
+            <th style="text-align:left;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);padding:11px 12px;border-bottom:1px solid var(--line)">Casebook</th>
+            <th style="text-align:left;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);padding:11px 12px;border-bottom:1px solid var(--line)">Type</th>
+            <th style="text-align:left;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);padding:11px 12px;border-bottom:1px solid var(--line)">Industry</th>
+            <th style="text-align:left;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);padding:11px 12px;border-bottom:1px solid var(--line)">Level</th>
+            <th style="text-align:left;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);padding:11px 12px;border-bottom:1px solid var(--line)">Rating</th>
+            <th style="text-align:left;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);padding:11px 12px;border-bottom:1px solid var(--line)">You</th>
+            <th style="text-align:left;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);padding:11px 12px;border-bottom:1px solid var(--line)">Status</th>
+            <th style="width:52px;border-bottom:1px solid var(--line)"></th>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{ visibleCases }}" as="c" hint-placeholder-count="8">
+              <tr style="cursor:pointer" style-hover="background:#fbfaf7">
+                <td onClick="{{ c.open }}" style="{{ c.rowPad }}">
+                  <div style="font-size:15px;font-weight:600;letter-spacing:-0.01em;line-height:1.25">{{ c.title }}</div>
+                  <div style="font-size:12px;color:var(--muted)">{{ c.subtitle }}</div>
+                </td>
+                <td onClick="{{ c.open }}" style="padding:10px 12px;border-bottom:1px solid var(--line-soft);font-size:13px;color:var(--muted)">{{ c.casebook }}</td>
+                <td onClick="{{ c.open }}" style="padding:10px 12px;border-bottom:1px solid var(--line-soft);font-size:13px">{{ c.type }}</td>
+                <td onClick="{{ c.open }}" style="padding:10px 12px;border-bottom:1px solid var(--line-soft);font-size:13px">{{ c.industry }}</td>
+                <td onClick="{{ c.open }}" style="padding:10px 12px;border-bottom:1px solid var(--line-soft)"><span style="{{ c.diffStyle }}">{{ c.difficulty }}</span></td>
+                <td onClick="{{ c.open }}" style="padding:10px 12px;border-bottom:1px solid var(--line-soft);font-size:13px;font-weight:600">{{ c.ratingLabel }}</td>
+                <td onClick="{{ c.open }}" style="padding:10px 12px;border-bottom:1px solid var(--line-soft);font-size:13px;color:var(--muted)">{{ c.scoreLabel }}</td>
+                <td onClick="{{ c.open }}" style="padding:10px 12px;border-bottom:1px solid var(--line-soft)"><span style="{{ c.statusStyle }}">{{ c.statusLabel }}</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid var(--line-soft);text-align:right"><button onClick="{{ c.toggleFlag }}" title="Save for revision" style="{{ c.flagStyle }}">{{ c.flagGlyph }}</button></td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+        <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:44px;text-align:center;color:var(--muted);font-size:13.5px">No case matches these filters. Loosen difficulty or casebook.</div>
+        </sc-if>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- CASE DETAIL -->
+    <sc-if value="{{ isCase }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:26px 38px 80px;max-width:1180px">
+      <button onClick="{{ backToLibrary }}" style="margin-bottom:16px;background:transparent;border:0;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;padding:0">← Case library</button>
+
+      <div style="display:flex;justify-content:space-between;gap:32px;align-items:flex-start;margin-bottom:22px">
+        <div style="min-width:0">
+          <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;font-family:var(--mono)">{{ cur.sourceLine }}</div>
+          <h2 style="font-size:44px;margin-bottom:12px;text-wrap:pretty">{{ cur.title }}</h2>
+          <div style="display:flex;gap:7px;flex-wrap:wrap">
+            <span style="padding:4px 11px;border-radius:999px;background:var(--accent-50);color:var(--accent);font-size:12px;font-weight:600">{{ cur.type }}</span>
+            <span style="padding:4px 11px;border-radius:999px;background:#f1efe9;color:var(--ink);font-size:12px;font-weight:600">{{ cur.industry }}</span>
+            <span style="padding:4px 11px;border-radius:999px;background:#f1efe9;color:var(--ink);font-size:12px;font-weight:600">{{ cur.difficulty }}</span>
+            <span style="padding:4px 11px;border-radius:999px;background:#f1efe9;color:var(--muted);font-size:12px;font-weight:600">{{ cur.minutesLabel }}</span>
+            <span style="padding:4px 11px;border-radius:999px;background:var(--amber-50);color:var(--amber);font-size:12px;font-weight:600">★ {{ cur.ratingMeta }}</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex:none">
+          <button onClick="{{ cur.toggleFlag }}" style="white-space:nowrap;height:40px;padding:0 15px;border:1px solid var(--line);border-radius:var(--rs);background:var(--card);color:var(--ink);font-size:13.5px;font-weight:600;cursor:pointer">{{ cur.flagAction }}</button>
+          <button onClick="{{ openRating }}" style="white-space:nowrap;height:40px;padding:0 18px;border:0;border-radius:var(--rs);background:var(--accent);color:#fff;font-size:13.5px;font-weight:600;cursor:pointer">{{ cur.doneAction }}</button>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 254px;gap:26px;align-items:start">
+        <div style="min-width:0;display:flex;flex-direction:column;gap:22px">
+
+          <section style="background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:22px 24px">
+            <div style="font-size:11.5px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--accent);margin-bottom:10px">Prompt</div>
+            <p style="font-size:17px;line-height:1.6;text-wrap:pretty">{{ cur.prompt }}</p>
+            <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line-soft);display:flex;gap:34px;flex-wrap:wrap">
+              <div><div style="font-size:11.5px;font-weight:600;color:var(--muted)">Client</div><div style="font-size:14px;font-weight:500">{{ cur.client }}</div></div>
+              <div><div style="font-size:11.5px;font-weight:600;color:var(--muted)">Objective</div><div style="font-size:14px;font-weight:500">{{ cur.objective }}</div></div>
+              <div><div style="font-size:11.5px;font-weight:600;color:var(--muted)">Interviewer style</div><div style="font-size:14px;font-weight:500">{{ cur.style }}</div></div>
+            </div>
+          </section>
+
+          <section>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <h3 style="font-size:24px">Transcript</h3>
+              <button onClick="{{ toggleAllTranscript }}" style="white-space:nowrap;background:transparent;border:0;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer">{{ transcriptToggleLabel }}</button>
+            </div>
+            <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden">
+              <sc-for list="{{ transcript }}" as="t" hint-placeholder-count="5">
+                <div style="border-bottom:1px solid var(--line-soft)">
+                  <button onClick="{{ t.toggle }}" style="width:100%;display:flex;gap:12px;align-items:center;text-align:left;background:transparent;border:0;padding:14px 18px;cursor:pointer" style-hover="background:#fbfaf7">
+                    <span style="font-family:var(--mono);font-size:11.5px;color:var(--muted)">{{ t.num }}</span>
+                    <span style="flex:1;font-size:15.5px;font-weight:600;letter-spacing:-0.01em">{{ t.q }}</span>
+                    <span style="padding:3px 10px;border-radius:999px;background:#f1efe9;font-size:11.5px;font-weight:600;color:var(--muted);white-space:nowrap">{{ t.tag }}</span>
+                    <span style="{{ t.caret }}">⌄</span>
+                  </button>
+                  <div style="{{ t.bodyStyle }}">
+                    <div style="padding:2px 18px 18px 44px;font-size:14.5px;line-height:1.65">
+                      <div style="font-size:11.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);margin-bottom:3px">Candidate</div>
+                      <p style="margin-bottom:12px">{{ t.a }}</p>
+                      <div style="border-left:2px solid var(--accent-200);padding:2px 0 2px 12px">
+                        <div style="font-size:11.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--accent);margin-bottom:3px">Interviewer guidance</div>
+                        <p style="color:var(--muted)">{{ t.note }}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </section>
+
+          <section>
+            <h3 style="font-size:24px;margin-bottom:10px">Solution</h3>
+            <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:22px 24px;display:flex;flex-direction:column;gap:22px">
+              <div>
+                <div style="font-size:11.5px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--accent);margin-bottom:10px">Structure</div>
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+                  <sc-for list="{{ structure }}" as="s" hint-placeholder-count="4">
+                    <div style="border:1px solid var(--line);border-radius:var(--rs);padding:12px 13px;background:#fbfaf7">
+                      <div style="font-family:var(--mono);font-size:11px;color:var(--accent)">{{ s.num }}</div>
+                      <div style="font-size:14.5px;font-weight:600;line-height:1.25;margin:3px 0 5px">{{ s.head }}</div>
+                      <div style="font-size:12.5px;color:var(--muted);line-height:1.45">{{ s.body }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:11.5px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--accent);margin-bottom:10px">Quant</div>
+                <table>
+                  <thead><tr>
+                    <th style="text-align:left;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line)">Line</th>
+                    <th style="text-align:left;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line)">Today</th>
+                    <th style="text-align:left;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line)">Fix</th>
+                    <th style="text-align:left;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line)">Impact</th>
+                  </tr></thead>
+                  <tbody>
+                    <sc-for list="{{ quant }}" as="q" hint-placeholder-count="4">
+                      <tr>
+                        <td style="padding:9px 10px;border-bottom:1px solid var(--line-soft);font-size:14px">{{ q.line }}</td>
+                        <td style="padding:9px 10px;border-bottom:1px solid var(--line-soft);font-size:14px;font-family:var(--mono)">{{ q.today }}</td>
+                        <td style="padding:9px 10px;border-bottom:1px solid var(--line-soft);font-size:14px;font-family:var(--mono)">{{ q.fix }}</td>
+                        <td style="padding:9px 10px;border-bottom:1px solid var(--line-soft);font-size:14px;font-weight:700;color:var(--accent)">{{ q.impact }}</td>
+                      </tr>
+                    </sc-for>
+                  </tbody>
+                </table>
+              </div>
+              <div>
+                <div style="font-size:11.5px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--accent);margin-bottom:10px">Exhibits — original casebook screenshots</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                  <figure style="margin:0;border:1px solid var(--line);border-radius:var(--rs);overflow:hidden">
+                    <div style="height:190px;display:grid;place-items:center;background:repeating-linear-gradient(135deg,#f4f2ec 0 12px,#eeebe3 12px 24px);color:var(--muted);font-size:12px;font-weight:600">Exhibit 1 — screenshot</div>
+                    <figcaption style="padding:8px 12px;font-size:12px;color:var(--muted);border-top:1px solid var(--line-soft)">Revenue bridge, FY23→FY25. Kept as the original image.</figcaption>
+                  </figure>
+                  <figure style="margin:0;border:1px solid var(--line);border-radius:var(--rs);overflow:hidden">
+                    <div style="height:190px;display:grid;place-items:center;background:repeating-linear-gradient(135deg,#f4f2ec 0 12px,#eeebe3 12px 24px);color:var(--muted);font-size:12px;font-weight:600">Exhibit 2 — screenshot</div>
+                    <figcaption style="padding:8px 12px;font-size:12px;color:var(--muted);border-top:1px solid var(--line-soft)">Cost per order by city tier. Not redrawn.</figcaption>
+                  </figure>
+                </div>
+              </div>
+              <div style="background:var(--accent-50);border:1px solid var(--accent-100);border-radius:var(--rs);padding:16px 18px">
+                <div style="font-size:11.5px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--accent);margin-bottom:6px">Recommendation</div>
+                <p style="font-size:15.5px;line-height:1.6;text-wrap:pretty">{{ cur.recommendation }}</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <aside style="position:sticky;top:22px;display:flex;flex-direction:column;gap:14px">
+          <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px 18px">
+            <div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-bottom:6px">Your record</div>
+            <div style="font-family:var(--display);font-size:36px;line-height:1">{{ cur.scoreLabel }}</div>
+            <div style="font-size:12.5px;color:var(--muted)">{{ cur.recordNote }}</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px 18px">
+            <div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-bottom:10px">Cohort</div>
+            <div style="display:flex;flex-direction:column;gap:7px;font-size:13.5px">
+              <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Avg self-score</span><span style="font-weight:600">6.4 / 10</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Attempts</span><span style="font-weight:600">{{ cur.ratings }}</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Median time</span><span style="font-weight:600">{{ cur.medianTime }}</span></div>
+            </div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px 18px">
+            <div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-bottom:10px">Similar cases</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <sc-for list="{{ related }}" as="r" hint-placeholder-count="3">
+                <a href="#" onClick="{{ r.open }}" style="font-size:13.5px;font-weight:600;line-height:1.25;color:var(--ink)">{{ r.title }}<br><span style="font-size:11.5px;font-weight:500;color:var(--muted)">{{ r.subtitle }}</span></a>
+              </sc-for>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- DASHBOARD -->
+    <sc-if value="{{ isDash }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:32px 38px 64px;max-width:1360px">
+      <h2 style="font-size:40px;margin-bottom:4px">Your numbers</h2>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:22px">Everything logged since 12 June. Cohort figures are the Co'27 median.</p>
+
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px">
+        <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="5">
+          <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px 18px">
+            <div style="font-size:11.5px;font-weight:600;color:var(--muted);margin-bottom:6px">{{ k.label }}</div>
+            <div style="font-family:var(--display);font-size:42px;line-height:1">{{ k.value }}</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:4px">{{ k.note }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1.35fr 1fr;gap:18px;margin-bottom:18px">
+        <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:18px 20px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px">
+            <h4 style="font-size:22px">Self-score trend</h4>
+            <span style="font-size:12px;color:var(--muted)">Last 14 cases · scale 1–10</span>
+          </div>
+          {{ trendChart }}
+        </div>
+        <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:18px 20px">
+          <h4 style="font-size:22px;margin-bottom:14px">Cases by type</h4>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ byType }}" as="t" hint-placeholder-count="6">
+              <div style="display:grid;grid-template-columns:112px 1fr 26px;gap:10px;align-items:center;font-size:13px">
+                <span>{{ t.label }}</span>
+                <span style="height:9px;border-radius:6px;background:#f0ede6;display:block;overflow:hidden"><span style="{{ t.barStyle }}"></span></span>
+                <span style="font-size:12.5px;font-weight:600;text-align:right">{{ t.count }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+        <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:18px 20px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+            <h4 style="font-size:22px">Performance by industry</h4>
+            <span style="font-size:12px;color:var(--muted)">avg self-score</span>
+          </div>
+          <table>
+            <thead><tr>
+              <th style="text-align:left;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);padding:8px 8px;border-bottom:1px solid var(--line)">Industry</th>
+              <th style="text-align:left;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);padding:8px 8px;border-bottom:1px solid var(--line)">Done</th>
+              <th style="text-align:left;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);padding:8px 8px;border-bottom:1px solid var(--line)">Avg</th>
+              <th style="width:36%;border-bottom:1px solid var(--line)"></th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ byIndustry }}" as="i" hint-placeholder-count="7">
+                <tr>
+                  <td style="padding:9px 8px;border-bottom:1px solid var(--line-soft);font-size:14px">{{ i.label }}</td>
+                  <td style="padding:9px 8px;border-bottom:1px solid var(--line-soft);font-size:13px;color:var(--muted)">{{ i.count }}</td>
+                  <td style="{{ i.scoreStyle }}">{{ i.score }}</td>
+                  <td style="padding:9px 8px;border-bottom:1px solid var(--line-soft)"><span style="height:8px;border-radius:6px;background:#f0ede6;display:block;overflow:hidden"><span style="{{ i.barStyle }}"></span></span></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:18px 20px">
+            <h4 style="font-size:22px;margin-bottom:3px">Weakest ground</h4>
+            <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Lowest average with at least two attempts.</p>
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <sc-for list="{{ weakest }}" as="w" hint-placeholder-count="3">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid var(--line);border-radius:var(--rs);padding:11px 13px">
+                  <div><div style="font-size:14.5px;font-weight:600">{{ w.label }}</div><div style="font-size:12px;color:var(--muted)">{{ w.note }}</div></div>
+                  <div style="display:flex;align-items:center;gap:12px">
+                    <div style="font-family:var(--display);font-size:26px;color:var(--amber)">{{ w.score }}</div>
+                    <button onClick="{{ w.drill }}" style="white-space:nowrap;height:32px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:var(--card);font-size:12.5px;font-weight:600;cursor:pointer;color:var(--ink)">Practice</button>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:18px 20px">
+            <h4 style="font-size:22px;margin-bottom:12px">Casebook coverage</h4>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <sc-for list="{{ coverage }}" as="c" hint-placeholder-count="5">
+                <div style="display:grid;grid-template-columns:112px 1fr 46px;gap:10px;align-items:center;font-size:13px">
+                  <span>{{ c.label }}</span>
+                  <span style="height:9px;border-radius:6px;background:#f0ede6;display:block;overflow:hidden"><span style="{{ c.barStyle }}"></span></span>
+                  <span style="font-size:12.5px;color:var(--muted);text-align:right">{{ c.ratio }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- MATCHING -->
+    <sc-if value="{{ isMatch }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:32px 38px 64px;max-width:1360px">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:20px">
+        <div>
+          <h2 style="font-size:40px;margin-bottom:4px">Find a partner</h2>
+          <p style="font-size:14px;color:var(--muted)">{{ matchLine }}</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:12.5px;font-weight:600;color:var(--muted)">You are</span>
+          <sc-for list="{{ myStatus }}" as="s" hint-placeholder-count="2">
+            <button onClick="{{ s.pick }}" style="{{ s.style }}">{{ s.label }}</button>
+          </sc-for>
+          <button onClick="{{ noop }}" style="white-space:nowrap;height:38px;padding:0 15px;border:1px solid var(--line);border-radius:999px;background:var(--card);font-size:13.5px;font-weight:600;cursor:pointer;color:var(--ink)">Edit my profile</button>
+        </div>
+      </div>
+
+      <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px 18px;margin-bottom:20px;display:flex;flex-direction:column;gap:11px">
+        <sc-for list="{{ matchFilters }}" as="g" hint-placeholder-count="4">
+          <div style="display:grid;grid-template-columns:96px 1fr;gap:14px;align-items:center">
+            <div style="font-size:11.5px;font-weight:600;color:var(--muted)">{{ g.label }}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <sc-for list="{{ g.options }}" as="o" hint-placeholder-count="4">
+                <button onClick="{{ o.toggle }}" style="{{ o.style }}">{{ o.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+        <sc-for list="{{ visiblePeople }}" as="p" hint-placeholder-count="6">
+          <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:18px;display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+              <div style="display:flex;gap:11px;align-items:center">
+                <span style="width:40px;height:40px;flex:none;border-radius:50%;background:var(--accent-50);color:var(--accent);display:grid;place-items:center;font-size:14px;font-weight:700">{{ p.initials }}</span>
+                <span style="font-size:16px;font-weight:600;letter-spacing:-0.01em;line-height:1.2">{{ p.name }}<br><span style="font-size:12px;font-weight:500;color:var(--muted)">{{ p.where }}</span></span>
+              </div>
+              <span style="{{ p.statusStyle }}">{{ p.status }}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;font-size:13.5px">
+              <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Function</span><span style="font-weight:600">{{ p.func }}</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Industry</span><span style="font-weight:600">{{ p.ind }}</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Cases done</span><span style="font-weight:600">{{ p.cases }}</span></div>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <sc-for list="{{ p.tags }}" as="t" hint-placeholder-count="2">
+                <span style="padding:3px 10px;border-radius:999px;background:#f4f2ec;font-size:11.5px;font-weight:600;color:var(--muted)">{{ t }}</span>
+              </sc-for>
+            </div>
+            <button onClick="{{ p.reveal }}" style="{{ p.btnStyle }}">{{ p.btnLabel }}</button>
+            <div style="font-size:11px;color:var(--muted)">{{ p.note }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- CASEBOOKS -->
+    <sc-if value="{{ isBooks }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:32px 38px 64px;max-width:1360px">
+      <h2 style="font-size:40px;margin-bottom:4px">Casebooks</h2>
+      <p style="font-size:14px;color:var(--muted);max-width:640px;margin-bottom:22px">Every casebook in its original PDF, plus how much of it is standardised on Casedeck. Prefer working offline? Download and go.</p>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+        <sc-for list="{{ casebooks }}" as="b" hint-placeholder-count="8">
+          <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:18px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div>
+                <div style="font-size:19px;font-weight:600;letter-spacing:-0.01em;line-height:1.2">{{ b.name }}</div>
+                <div style="font-size:12px;color:var(--muted)">{{ b.year }} edition · {{ b.size }}</div>
+              </div>
+              <span style="padding:3px 10px;border-radius:999px;background:var(--amber-50);color:var(--amber);font-size:11.5px;font-weight:700">★ {{ b.rating }}</span>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-bottom:5px"><span>Standardised</span><span style="{{ b.ratioStyle }}">{{ b.ratio }}</span></div>
+              <span style="height:7px;border-radius:6px;background:#f0ede6;display:block;overflow:hidden"><span style="{{ b.barStyle }}"></span></span>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:2px">
+              <button onClick="{{ b.browse }}" style="flex:1;height:34px;border:0;border-radius:var(--rs);background:var(--accent);color:#fff;font-size:12.5px;font-weight:600;cursor:pointer">Browse cases</button>
+              <button onClick="{{ noop }}" style="height:34px;padding:0 12px;border:1px solid var(--line);border-radius:var(--rs);background:var(--card);color:var(--ink);font-size:12.5px;font-weight:600;cursor:pointer">PDF</button>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- FRAMEWORKS -->
+    <sc-if value="{{ isFw }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:32px 38px 64px;max-width:1360px">
+      <h2 style="font-size:40px;margin-bottom:4px">Frameworks &amp; material</h2>
+      <p style="font-size:14px;color:var(--muted);max-width:640px;margin-bottom:22px">Frameworks written the way IIM A, B and C casebooks teach them — when to use it, the branches, the trap, and the diagram exactly as it appears in the source.</p>
+      <div style="display:grid;grid-template-columns:1fr 306px;gap:24px;align-items:start">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <sc-for list="{{ frameworks }}" as="f" hint-placeholder-count="6">
+            <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:20px;display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">
+                <h4 style="font-size:24px">{{ f.name }}</h4>
+                <span style="font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap">{{ f.source }}</span>
+              </div>
+              <p style="font-size:13.5px;color:var(--muted);text-wrap:pretty">{{ f.when }}</p>
+              <div style="display:flex;flex-direction:column;gap:7px">
+                <sc-for list="{{ f.branches }}" as="br" hint-placeholder-count="4">
+                  <div style="display:flex;gap:10px;font-size:13.5px;align-items:baseline">
+                    <span style="font-family:var(--mono);font-size:11px;color:var(--accent)">{{ br.n }}</span><span>{{ br.t }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display:flex;gap:9px;align-items:flex-start;font-size:12.5px;padding:10px 12px;border-radius:var(--rs);background:var(--amber-50);color:#7d4a20">
+                <span style="font-weight:700;letter-spacing:0.05em;white-space:nowrap">TRAP</span><span>{{ f.trap }}</span>
+              </div>
+              <figure style="margin:0;border:1px solid var(--line);border-radius:var(--rs);overflow:hidden">
+                <div style="height:120px;display:grid;place-items:center;background:repeating-linear-gradient(135deg,#f4f2ec 0 12px,#eeebe3 12px 24px);color:var(--muted);font-size:12px;font-weight:600">Diagram — screenshot</div>
+              </figure>
+            </div>
+          </sc-for>
+        </div>
+        <aside style="display:flex;flex-direction:column;gap:16px;position:sticky;top:22px">
+          <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:18px">
+            <div style="font-size:11.5px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--accent);margin-bottom:12px">Books &amp; PDFs</div>
+            <div style="display:flex;flex-direction:column;gap:11px">
+              <sc-for list="{{ books }}" as="b" hint-placeholder-count="5">
+                <div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+                  <div><div style="font-size:14.5px;font-weight:600;line-height:1.2">{{ b.title }}</div><div style="font-size:11.5px;color:var(--muted)">{{ b.meta }}</div></div>
+                  <button onClick="{{ noop }}" style="white-space:nowrap;height:28px;padding:0 11px;border:1px solid var(--line);border-radius:999px;background:var(--card);font-size:12px;font-weight:600;cursor:pointer;color:var(--ink)">PDF</button>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="background:var(--accent);border-radius:var(--r);padding:18px;color:#fff">
+            <div style="font-family:var(--display);font-size:26px;line-height:1.1;margin-bottom:6px">Guesstimate drills</div>
+            <p style="font-size:13px;color:#cfe3db;margin-bottom:12px">40 sizing prompts with worked answers, tagged by the assumption they test.</p>
+            <button onClick="{{ noop }}" style="height:36px;width:100%;border:0;border-radius:var(--rs);background:#fff;color:var(--accent);font-size:13px;font-weight:700;cursor:pointer">Open drills</button>
+          </div>
+        </aside>
+      </div>
+    </div>
+    </sc-if>
+
+  </main>
+
+  <sc-if value="{{ ratingOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;inset:0;display:grid;place-items:center;padding:24px;background:rgba(23,26,25,.42);backdrop-filter:blur(2px)">
+    <div style="width:440px;background:var(--card);border-radius:16px;box-shadow:0 24px 60px rgba(23,26,25,.25);padding:26px;display:flex;flex-direction:column;gap:20px">
+      <div>
+        <h3 style="font-size:28px;margin-bottom:4px">Log this case</h3>
+        <p style="font-size:13.5px;color:var(--muted)">Your rating helps the next student pick well.</p>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:7px">Case quality</div>
+        <div style="display:flex;gap:6px">
+          <sc-for list="{{ starOptions }}" as="s" hint-placeholder-count="5">
+            <button onClick="{{ s.pick }}" style="{{ s.style }}">{{ s.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:7px">How did you perform? (1–10)</div>
+        <div style="display:flex;gap:5px">
+          <sc-for list="{{ scoreOptions }}" as="s" hint-placeholder-count="10">
+            <button onClick="{{ s.pick }}" style="{{ s.style }}">{{ s.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+      <label style="display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600;color:var(--muted)">One line on what broke (optional)
+        <input placeholder="Missed the fixed-cost split" style="height:40px;padding:0 12px;border:1px solid var(--line);border-radius:var(--rs);background:#fbfaf8;font-size:14px;color:var(--ink)">
+      </label>
+      <div style="display:flex;justify-content:flex-end;gap:8px">
+        <button onClick="{{ closeRating }}" style="height:38px;padding:0 15px;border:1px solid var(--line);border-radius:var(--rs);background:var(--card);color:var(--ink);font-size:13.5px;font-weight:600;cursor:pointer">Cancel</button>
+        <button onClick="{{ saveRating }}" style="white-space:nowrap;height:38px;padding:0 16px;border:0;border-radius:var(--rs);background:var(--accent);color:#fff;font-size:13.5px;font-weight:600;cursor:pointer">Save &amp; mark done</button>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;compactRows&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Library&quot;},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#15614e&quot;,&quot;options&quot;:[&quot;#15614e&quot;,&quot;#1f3f6e&quot;,&quot;#7a3b2e&quot;,&quot;#2f3437&quot;],&quot;tsType&quot;:&quot;string&quot;}}">
+const CASES = [
+  {id:1,title:"Nykaa: D2C beauty margin squeeze",client:"Listed D2C beauty retailer",type:"Profitability",industry:"Retail & CPG",difficulty:"Hard",casebook:"IIM A 2024",page:112,minutes:35,rating:4.6,ratings:184,done:true,score:7,flagged:false},
+  {id:2,title:"Cargo terminal at a tier-2 airport",client:"Airport operator",type:"Market entry",industry:"Aviation",difficulty:"Medium",casebook:"IIM B 2023",page:48,minutes:30,rating:4.1,ratings:96,done:true,score:5,flagged:true},
+  {id:3,title:"Integrated steel plant cost-out",client:"Long products steel major",type:"Cost reduction",industry:"Industrials",difficulty:"Hard",casebook:"IIM C 2024",page:203,minutes:40,rating:4.4,ratings:71,done:false,score:null,flagged:true},
+  {id:4,title:"Postpaid churn at a telco",client:"National telecom operator",type:"Profitability",industry:"Telecom",difficulty:"Medium",casebook:"IIM L 2023",page:66,minutes:30,rating:3.8,ratings:142,done:true,score:8,flagged:false},
+  {id:5,title:"EV charging network rollout",client:"Oil marketing company",type:"Market entry",industry:"Energy",difficulty:"Medium",casebook:"ISB 2025",page:19,minutes:30,rating:4.7,ratings:58,done:false,score:null,flagged:false},
+  {id:6,title:"Pharma patent cliff, 2027",client:"Indian generics exporter",type:"Growth strategy",industry:"Pharma",difficulty:"Hard",casebook:"IIM A 2024",page:148,minutes:40,rating:4.5,ratings:88,done:false,score:null,flagged:true},
+  {id:7,title:"Quick commerce unit economics",client:"10-minute grocery platform",type:"Profitability",industry:"Retail & CPG",difficulty:"Hard",casebook:"ISB 2025",page:34,minutes:35,rating:4.8,ratings:210,done:true,score:6,flagged:false},
+  {id:8,title:"Hospital chain: two new cities",client:"Multi-specialty hospital chain",type:"Growth strategy",industry:"Healthcare",difficulty:"Easy",casebook:"IIM B 2023",page:91,minutes:25,rating:3.6,ratings:64,done:true,score:9,flagged:false},
+  {id:9,title:"Cement roll-up in the south",client:"Cement manufacturer",type:"M&A",industry:"Industrials",difficulty:"Hard",casebook:"IIM C 2024",page:167,minutes:40,rating:4.2,ratings:53,done:false,score:null,flagged:false},
+  {id:10,title:"Repricing an airline loyalty programme",client:"Full-service carrier",type:"Pricing",industry:"Aviation",difficulty:"Medium",casebook:"Darden 2023",page:22,minutes:30,rating:4.0,ratings:47,done:false,score:null,flagged:false},
+  {id:11,title:"Sizing the drone-spraying market",client:"Agritech startup",type:"Market sizing",industry:"Agriculture",difficulty:"Easy",casebook:"IIM A 2024",page:31,minutes:20,rating:3.9,ratings:120,done:true,score:8,flagged:false},
+  {id:12,title:"Branch operations at a private bank",client:"Private sector bank",type:"Operations",industry:"BFSI",difficulty:"Medium",casebook:"IIM L 2023",page:118,minutes:30,rating:4.3,ratings:77,done:true,score:6,flagged:false},
+  {id:13,title:"Ed-tech: from B2C to B2B schools",client:"K-12 ed-tech platform",type:"Growth strategy",industry:"Education",difficulty:"Medium",casebook:"IIM B 2023",page:140,minutes:30,rating:3.4,ratings:39,done:false,score:null,flagged:false},
+  {id:14,title:"Port congestion and demurrage",client:"Container terminal",type:"Operations",industry:"Logistics",difficulty:"Hard",casebook:"IIM C 2024",page:78,minutes:35,rating:4.4,ratings:41,done:false,score:null,flagged:false}
+];
+
+const PEOPLE = [
+  {id:1,name:"Rohan Mehta",campus:"Hyderabad",mode:"Offline",func:"Product",ind:"SaaS",cases:41,status:"Available",tags:["Prefers 8–10pm","Strong on quant"],phone:"+91 98450 22118"},
+  {id:2,name:"Sneha Iyer",campus:"Mohali",mode:"Online",func:"Consulting",ind:"BFSI",cases:63,status:"Available",tags:["Ex-Deloitte","Interviewer mode"],phone:"+91 99010 47732"},
+  {id:3,name:"Karthik Nair",campus:"Hyderabad",mode:"Either",func:"Operations",ind:"Manufacturing",cases:28,status:"Busy",tags:["Weekends only"],phone:"+91 90080 11245"},
+  {id:4,name:"Ananya Gupta",campus:"Mohali",mode:"Online",func:"Marketing",ind:"Retail & CPG",cases:52,status:"Available",tags:["Market entry focus","Fast feedback"],phone:"+91 98111 30947"},
+  {id:5,name:"Devansh Shah",campus:"Hyderabad",mode:"Offline",func:"Finance",ind:"PE / VC",cases:77,status:"Available",tags:["Brutal on structure"],phone:"+91 93222 84410"},
+  {id:6,name:"Meera Krishnan",campus:"Hyderabad",mode:"Either",func:"Engineering",ind:"Energy",cases:19,status:"Busy",tags:["New to cases"],phone:"+91 89100 56621"},
+  {id:7,name:"Aditya Bansal",campus:"Mohali",mode:"Online",func:"Consulting",ind:"Healthcare",cases:58,status:"Available",tags:["Ex-ZS","Profitability drills"],phone:"+91 97300 19884"},
+  {id:8,name:"Ishita Verma",campus:"Hyderabad",mode:"Offline",func:"Product",ind:"Fintech",cases:35,status:"Available",tags:["Morning slots"],phone:"+91 96540 77203"},
+  {id:9,name:"Nikhil Rao",campus:"Mohali",mode:"Either",func:"Sales",ind:"Telecom",cases:44,status:"Busy",tags:["Guesstimates"],phone:"+91 91760 33125"}
+];
+
+const CHIP_BASE = "white-space:nowrap;font-size:12.5px;font-weight:600;padding:5px 12px;border-radius:999px;cursor:pointer;line-height:1.3;";
+const CHIP = CHIP_BASE + "border:1px solid var(--line);background:#fbfaf7;color:var(--ink)";
+const CHIP_ON = CHIP_BASE + "border:1px solid var(--accent);background:var(--accent);color:#fff";
+const PILL = "padding:4px 11px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap;";
+const CELL = "padding:10px 12px;border-bottom:1px solid var(--line-soft);";
+
+class Component extends DCLogic {
+  state = {
+    screen: "signin", caseId: null, query: "", sort: "rating",
+    filters: {difficulty:[],industry:[],type:[],casebook:[],status:[]},
+    mfilters: {campus:[],mode:[],status:[],func:[]},
+    cases: CASES.map(c => ({...c})),
+    openT: {0:true}, revealed: {}, ratingOpen:false, tmpRating:4, tmpScore:7, mine:"Available"
+  };
+
+  componentDidMount() { this.applyAccent(); }
+  componentDidUpdate() { this.applyAccent(); }
+  applyAccent() {
+    const a = this.props.accent;
+    if (a) document.documentElement.style.setProperty("--accent", a);
+  }
+
+  go = (screen) => (e) => { if (e) e.preventDefault(); this.setState({screen, caseId: screen === "library" ? null : this.state.caseId}); window.scrollTo(0,0); };
+  toggleF = (group, key, val) => (e) => {
+    e && e.preventDefault();
+    const g = {...this.state[group]};
+    g[key] = g[key].includes(val) ? g[key].filter(v => v !== val) : [...g[key], val];
+    this.setState({[group]: g});
+  };
+  opts = (group, key, values) => values.map(v => ({
+    label: v, toggle: this.toggleF(group, key, v),
+    style: this.state[group][key].includes(v) ? CHIP_ON : CHIP
+  }));
+
+  matches = (c) => {
+    const f = this.state.filters, q = this.state.query.trim().toLowerCase();
+    if (f.difficulty.length && !f.difficulty.includes(c.difficulty)) return false;
+    if (f.industry.length && !f.industry.includes(c.industry)) return false;
+    if (f.type.length && !f.type.includes(c.type)) return false;
+    if (f.casebook.length && !f.casebook.includes(c.casebook)) return false;
+    if (f.status.length) {
+      const ok = f.status.some(s => (s === "Done" && c.done) || (s === "Not done" && !c.done) || (s === "Saved" && c.flagged) || (s === "Rated 4+" && c.rating >= 4));
+      if (!ok) return false;
+    }
+    if (q && !(c.title + " " + c.client + " " + c.casebook + " " + c.industry).toLowerCase().includes(q)) return false;
+    return true;
+  };
+
+  openCase = (id) => (e) => { e && e.preventDefault(); this.setState({screen:"case", caseId:id, openT:{0:true}}); window.scrollTo(0,0); };
+  flag = (id) => (e) => {
+    e && e.stopPropagation(); e && e.preventDefault();
+    this.setState({cases: this.state.cases.map(c => c.id === id ? {...c, flagged: !c.flagged} : c)});
+  };
+  saveRating = () => {
+    const id = this.state.caseId;
+    this.setState({ratingOpen:false, cases: this.state.cases.map(c => c.id === id ? {...c, done:true, score:this.state.tmpScore} : c)});
+  };
+
+  trend() {
+    const pts = [4,5,4,6,5,7,6,6,8,7,6,8,9,8];
+    const W = 560, H = 150, pad = 10;
+    const x = i => pad + i * ((W - pad*2) / (pts.length - 1));
+    const y = v => H - pad - ((v - 1) / 9) * (H - pad*2);
+    const E = React.createElement;
+    const line = pts.map((v,i) => `${x(i)},${y(v)}`).join(" ");
+    const area = `${pad},${H-pad} ` + line + ` ${W-pad},${H-pad}`;
+    return E("svg", {viewBox:`0 0 ${W} ${H}`, width:"100%", height:"150", preserveAspectRatio:"none", key:"t"},
+      E("defs", null, E("linearGradient", {id:"tg", x1:"0", y1:"0", x2:"0", y2:"1"},
+        E("stop",{offset:"0%",stopColor:"var(--accent)",stopOpacity:"0.18"}),
+        E("stop",{offset:"100%",stopColor:"var(--accent)",stopOpacity:"0"}))),
+      [3,5,7,9].map(v => E("line",{key:"g"+v,x1:0,x2:W,y1:y(v),y2:y(v),stroke:"#efece5",strokeWidth:1})),
+      E("polygon",{points:area,fill:"url(#tg)"}),
+      E("polyline",{points:line,fill:"none",stroke:"var(--accent)",strokeWidth:2.5,strokeLinejoin:"round",strokeLinecap:"round"}),
+      pts.map((v,i) => E("circle",{key:"p"+i,cx:x(i),cy:y(v),r:3.2,fill:"#fff",stroke:"var(--accent)",strokeWidth:2}))
+    );
+  }
+
+  renderVals() {
+    const st = this.state, cases = st.cases;
+    const nav = [["library","Case library"],["dashboard","Your numbers"],["match","Find a partner"],["books","Casebooks"],["frameworks","Frameworks"]];
+    const navActive = st.screen === "case" ? "library" : st.screen;
+    const uniq = k => [...new Set(CASES.map(c => c[k]))];
+    const flaggedCount = cases.filter(c => c.flagged).length;
+
+    const visible = cases.filter(this.matches).sort((a,b) =>
+      st.sort === "rating" ? b.rating - a.rating : st.sort === "difficulty" ? a.difficulty.localeCompare(b.difficulty) : a.title.localeCompare(b.title));
+
+    const decorate = c => ({
+      ...c,
+      subtitle: c.client + " · " + c.minutes + " min",
+      sourceLine: c.casebook + " · page " + c.page,
+      minutesLabel: c.minutes + " min",
+      medianTime: c.minutes + " min",
+      ratingLabel: c.rating.toFixed(1),
+      ratingMeta: c.rating.toFixed(1) + " (" + c.ratings + " ratings)",
+      scoreLabel: c.done ? c.score + "/10" : "—",
+      statusLabel: c.done ? "Done" : c.flagged ? "Saved" : "Not done",
+      statusStyle: PILL + (c.done
+        ? "background:var(--accent-50);color:var(--accent)"
+        : c.flagged ? "background:var(--amber-50);color:var(--amber)"
+        : "background:#f1efe9;color:var(--muted)"),
+      diffStyle: "font-size:12.5px;font-weight:600;color:" + (c.difficulty === "Hard" ? "#a03d2f" : c.difficulty === "Medium" ? "var(--amber)" : "var(--accent)"),
+      flagGlyph: c.flagged ? "★" : "☆",
+      flagStyle: "background:transparent;border:0;cursor:pointer;font-size:16px;line-height:1;padding:2px;color:" + (c.flagged ? "var(--amber)" : "#c9c5bc"),
+      rowPad: (this.props.compactRows ? "padding:6px 16px;" : "padding:12px 16px;") + "border-bottom:1px solid var(--line-soft)",
+      open: this.openCase(c.id),
+      toggleFlag: this.flag(c.id)
+    });
+
+    const cur0 = cases.find(c => c.id === st.caseId) || cases[0];
+    const cur = decorate(cur0);
+    cur.prompt = "Our client, " + cur0.client.toLowerCase() + ", has grown revenue 22% a year for three years while EBITDA margin fell from 9% to 3%. The CEO wants to know why, and what to do before the board meets in six weeks.";
+    cur.objective = "Recover 400 bps of margin";
+    cur.style = "Interviewer-led";
+    cur.recommendation = "Hold topline and attack the two cost lines that actually moved: delivery cost per order and discount intensity in tier-1. Together they explain 340 of the 600 bps lost. A 12-week pilot in two cities de-risks the rollout before the board asks for national numbers.";
+    cur.doneAction = cur0.done ? "Update log" : "Mark done";
+    cur.flagAction = cur0.flagged ? "Remove from saved" : "Save for revision";
+    cur.recordNote = cur0.done ? "Logged 18 Aug · 34 min" : "Not attempted yet";
+
+    const T = [
+      {q:"How would you structure this?",tag:"Structure",a:"Margin equals revenue per order minus cost per order. I would split the fall into price and mix on the revenue side, and delivery, procurement and marketing on the cost side, then size each.",note:"Push for MECE. Candidates who list five buckets without arithmetic are stalling."},
+      {q:"Revenue per order is flat. Where do you go?",tag:"Drill-down",a:"Then the loss sits on cost. I would rank cost lines by size first, then by movement, and only investigate lines that are both large and moving.",note:"Give Exhibit 1 here. Look for the candidate to compute, not describe."},
+      {q:"Exhibit 1: what do you see?",tag:"Exhibit",a:"Delivery cost per order rose from ₹41 to ₹58 while order value stayed at ₹430. That alone is roughly 4 points of margin.",note:"Correct read is 3.95 pts. Accept 3.5–4.5 with clean working."},
+      {q:"Why did delivery cost rise?",tag:"Hypothesis",a:"Three candidates: smaller basket per drop, more tier-2 cities with lower density, or rider cost inflation. Exhibit 2 splits it by city tier.",note:"The best candidates name density before they are shown the tier split."},
+      {q:"The CEO walks in. What do you tell her?",tag:"Synthesis",a:"Answer first: two cost lines explain most of the fall, both are fixable in-year, and here is the pilot that proves it.",note:"Sixty seconds, recommendation first, risks last. Time this."}
+    ];
+    const transcript = T.map((t,i) => ({
+      ...t, num: String(i+1).padStart(2,"0"),
+      toggle: (e) => { e && e.preventDefault(); this.setState({openT: {...st.openT, [i]: !st.openT[i]}}); },
+      bodyStyle: st.openT[i] ? "display:block" : "display:none",
+      caret: "font-size:13px;color:var(--muted);transition:transform .15s;display:inline-block;transform:rotate(" + (st.openT[i] ? "180deg" : "0deg") + ")"
+    }));
+    const allOpen = T.every((_,i) => st.openT[i]);
+
+    const byTypeRaw = [["Profitability",9],["Market entry",5],["Growth strategy",4],["Cost reduction",3],["Market sizing",6],["Operations",2]];
+    const byIndRaw = [["Retail & CPG",7,7.4],["BFSI",5,6.8],["Aviation",3,5.3],["Industrials",4,5.9],["Pharma",2,4.5],["Telecom",4,7.8],["Healthcare",3,8.1]];
+    const coverRaw = [["IIM A 2024",18,52],["IIM B 2023",11,44],["IIM C 2024",7,61],["ISB 2025",9,28],["IIM L 2023",6,39]];
+
+    const people = PEOPLE.filter(p => {
+      const f = st.mfilters;
+      if (f.campus.length && !f.campus.includes(p.campus)) return false;
+      if (f.mode.length && !f.mode.includes(p.mode)) return false;
+      if (f.status.length && !f.status.includes(p.status)) return false;
+      if (f.func.length && !f.func.includes(p.func)) return false;
+      return true;
+    }).map(p => ({
+      ...p,
+      where: p.campus + " · " + p.mode,
+      initials: p.name.split(" ").map(n => n[0]).join(""),
+      statusStyle: PILL + (p.status === "Available" ? "background:var(--accent-50);color:var(--accent)" : "background:#f1efe9;color:var(--muted)"),
+      btnLabel: st.revealed[p.id] ? p.phone : "Reveal WhatsApp number",
+      btnStyle: "white-space:nowrap;height:38px;border-radius:var(--rs);font-size:13.5px;font-weight:600;cursor:pointer;" + (st.revealed[p.id]
+        ? "border:1px solid var(--accent-200);background:var(--accent-50);color:var(--accent);font-family:var(--mono)"
+        : "border:0;background:var(--accent);color:#fff"),
+      note: st.revealed[p.id] ? "Revealed 3 Sep · they can see you looked" : "Reveals are logged and shown to both students",
+      reveal: (e) => { e && e.preventDefault(); this.setState({revealed: {...st.revealed, [p.id]: true}}); }
+    }));
+
+    return {
+      isSignin: st.screen === "signin", isApp: st.screen !== "signin",
+      isLibrary: st.screen === "library", isCase: st.screen === "case", isDash: st.screen === "dashboard",
+      isMatch: st.screen === "match", isBooks: st.screen === "books", isFw: st.screen === "frameworks",
+      signIn: this.go("library"), noop: (e) => e && e.preventDefault(),
+      backToLibrary: this.go("library"),
+      navItems: nav.map(([k,label]) => {
+        const on = navActive === k;
+        return {
+          label, go: this.go(k),
+          style: "display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;font-size:14px;font-weight:600;" +
+            (on ? "background:var(--accent-50);color:var(--accent)" : "color:var(--ink)"),
+          dot: "width:6px;height:6px;border-radius:50%;flex:none;background:" + (on ? "var(--accent)" : "#d7d3ca"),
+          badge: k === "library" && flaggedCount ? String(flaggedCount) : "",
+          badgeStyle: k === "library" && flaggedCount
+            ? "margin-left:auto;padding:1px 8px;border-radius:999px;background:var(--amber-50);color:var(--amber);font-size:11px;font-weight:700"
+            : "display:none"
+        };
+      }),
+
+      query: st.query,
+      onQuery: (e) => this.setState({query: e.target.value}),
+      clearFilters: (e) => { e && e.preventDefault(); this.setState({filters:{difficulty:[],industry:[],type:[],casebook:[],status:[]}, query:""}); },
+      filterGroups: [
+        {label:"Difficulty", options: this.opts("filters","difficulty",["Easy","Medium","Hard"])},
+        {label:"Type", options: this.opts("filters","type",uniq("type"))},
+        {label:"Industry", options: this.opts("filters","industry",uniq("industry"))},
+        {label:"Casebook", options: this.opts("filters","casebook",uniq("casebook"))},
+        {label:"Your status", options: this.opts("filters","status",["Done","Not done","Saved","Rated 4+"])}
+      ],
+      sorts: [["rating","Rating"],["difficulty","Difficulty"],["title","A–Z"]].map(([k,label]) => ({
+        label, pick: (e) => { e && e.preventDefault(); this.setState({sort:k}); },
+        style: "white-space:nowrap;font-size:12.5px;font-weight:600;padding:5px 12px;border-radius:999px;cursor:pointer;" +
+          (st.sort === k ? "border:1px solid var(--accent);background:var(--accent);color:#fff" : "border:1px solid var(--line);background:var(--card);color:var(--ink)")
+      })),
+      visibleCases: visible.map(decorate),
+      noResults: visible.length === 0,
+      resultLine: visible.length + " of " + cases.length + " cases shown · " + cases.filter(c => c.done).length + " done · " + flaggedCount + " saved for revision",
+
+      cur, transcript,
+      transcriptToggleLabel: allOpen ? "Collapse all" : "Expand all",
+      toggleAllTranscript: (e) => { e && e.preventDefault(); const next = {}; T.forEach((_,i) => next[i] = !allOpen); this.setState({openT: next}); },
+      structure: [
+        {num:"01",head:"Revenue per order",body:"Price, mix, discount intensity by city tier."},
+        {num:"02",head:"Variable cost",body:"Delivery, packaging, payment gateway per order."},
+        {num:"03",head:"Fixed cost",body:"Dark stores, tech, central marketing."},
+        {num:"04",head:"Decision",body:"Which lines are large and moving? Fix only those."}
+      ],
+      quant: [
+        {line:"Order value",today:"₹430",fix:"₹430",impact:"—"},
+        {line:"Delivery / order",today:"₹58",fix:"₹47",impact:"+2.6 pts"},
+        {line:"Discount / order",today:"₹36",fix:"₹28",impact:"+1.9 pts"},
+        {line:"Dark store fixed",today:"₹19",fix:"₹17",impact:"+0.5 pts"}
+      ],
+      related: cases.filter(c => c.id !== cur0.id && c.type === cur0.type).slice(0,3).map(c => ({
+        title: c.title, subtitle: c.casebook + " · " + c.difficulty, open: this.openCase(c.id)
+      })),
+      openRating: (e) => { e && e.preventDefault(); this.setState({ratingOpen:true}); },
+      closeRating: (e) => { e && e.preventDefault(); this.setState({ratingOpen:false}); },
+      ratingOpen: st.ratingOpen,
+      saveRating: this.saveRating,
+      starOptions: [1,2,3,4,5].map(n => ({
+        label: "★".repeat(n),
+        pick: (e) => { e && e.preventDefault(); this.setState({tmpRating:n}); },
+        style: "white-space:nowrap;font-size:13px;padding:6px 10px;border-radius:var(--rs);cursor:pointer;" +
+          (st.tmpRating === n ? "border:1px solid var(--amber);background:var(--amber-50);color:var(--amber)" : "border:1px solid var(--line);background:var(--card);color:#c9c5bc")
+      })),
+      scoreOptions: [1,2,3,4,5,6,7,8,9,10].map(n => ({
+        label: String(n),
+        pick: (e) => { e && e.preventDefault(); this.setState({tmpScore:n}); },
+        style: "width:33px;height:33px;font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;" +
+          (st.tmpScore === n ? "border:1px solid var(--accent);background:var(--accent);color:#fff" : "border:1px solid var(--line);background:var(--card);color:var(--ink)")
+      })),
+
+      kpis: [
+        {label:"Cases done", value:"29", note:"6 this week"},
+        {label:"Avg self-score", value:"6.8", note:"cohort 6.1"},
+        {label:"Hours logged", value:"17.5", note:"34 min per case"},
+        {label:"Partners", value:"7", note:"11 sessions"},
+        {label:"Saved", value:"5", note:"to revisit before D-day"}
+      ],
+      trendChart: this.trend(),
+      byType: byTypeRaw.map(([label,count]) => ({label,count,barStyle:"display:block;height:100%;border-radius:6px;background:var(--accent);width:" + Math.round(count/9*100) + "%"})),
+      byIndustry: byIndRaw.map(([label,count,score]) => ({
+        label, count, score: score.toFixed(1),
+        scoreStyle: CELL + "font-size:14px;font-weight:700;color:" + (score < 6 ? "var(--amber)" : "var(--accent)"),
+        barStyle: "display:block;height:100%;border-radius:6px;width:" + Math.round(score/10*100) + "%;background:" + (score < 6 ? "var(--amber)" : "var(--accent)")
+      })),
+      weakest: [
+        {label:"Pharma", note:"2 cases · both IIM A", score:"4.5", drill: this.go("library")},
+        {label:"Aviation", note:"3 cases · market entry", score:"5.3", drill: this.go("library")},
+        {label:"Industrials", note:"4 cases · cost-out", score:"5.9", drill: this.go("library")}
+      ],
+      coverage: coverRaw.map(([label,done,total]) => ({label, ratio: done + "/" + total, barStyle:"display:block;height:100%;border-radius:6px;background:var(--accent);width:" + Math.round(done/total*100) + "%"})),
+
+      myStatus: ["Available","Busy"].map(s => ({
+        label: s, pick: (e) => { e && e.preventDefault(); this.setState({mine:s}); },
+        style: st.mine === s ? CHIP_ON : CHIP
+      })),
+      matchFilters: [
+        {label:"Campus", options: this.opts("mfilters","campus",["Hyderabad","Mohali"])},
+        {label:"Mode", options: this.opts("mfilters","mode",["Online","Offline","Either"])},
+        {label:"Status", options: this.opts("mfilters","status",["Available","Busy"])},
+        {label:"Work ex", options: this.opts("mfilters","func",["Consulting","Product","Finance","Operations","Marketing","Engineering","Sales"])}
+      ],
+      matchLine: people.length + " students match · " + people.filter(p => p.status === "Available").length + " free right now",
+      visiblePeople: people,
+
+      casebooks: [
+        {name:"IIM Ahmedabad",year:"2024",cases:52,std:52,rating:"4.5",size:"18 MB"},
+        {name:"IIM Bangalore",year:"2023",cases:44,std:44,rating:"4.2",size:"14 MB"},
+        {name:"IIM Calcutta",year:"2024",cases:61,std:58,rating:"4.4",size:"22 MB"},
+        {name:"IIM Lucknow",year:"2023",cases:39,std:31,rating:"3.9",size:"11 MB"},
+        {name:"ISB Hyderabad",year:"2025",cases:28,std:28,rating:"4.7",size:"9 MB"},
+        {name:"Darden",year:"2023",cases:34,std:20,rating:"4.0",size:"12 MB"},
+        {name:"Wharton",year:"2022",cases:47,std:26,rating:"4.1",size:"16 MB"},
+        {name:"Kellogg",year:"2023",cases:41,std:18,rating:"4.3",size:"15 MB"}
+      ].map(b => {
+        const pct = Math.round(b.std / b.cases * 100);
+        return {...b, browse: this.go("library"), ratio: b.std + " of " + b.cases,
+          ratioStyle: "font-weight:600;color:" + (pct === 100 ? "var(--accent)" : "var(--ink)"),
+          barStyle: "display:block;height:100%;border-radius:6px;background:var(--accent);width:" + pct + "%"};
+      }),
+
+      frameworks: [
+        {name:"Profitability tree", source:"IIM A p.12", when:"Any 'profits are falling' prompt. Split before you hypothesise.",
+         branches:[{n:"01",t:"Revenue = volume × price × mix"},{n:"02",t:"Variable cost per unit"},{n:"03",t:"Fixed cost and allocation"},{n:"04",t:"External: market vs. client-only"}],
+         trap:"Jumping to cost cutting before checking whether the whole market fell."},
+        {name:"Market entry", source:"IIM B p.7", when:"New geography, segment or product for an existing player.",
+         branches:[{n:"01",t:"Is the market attractive? size, growth, margin"},{n:"02",t:"Can we win? capability, cost position"},{n:"03",t:"Entry mode: build, buy, partner"},{n:"04",t:"Financials and exit test"}],
+         trap:"Sizing the market and never answering whether the client can actually win."},
+        {name:"M&A screen", source:"IIM C p.19", when:"Should the client acquire, and at what price.",
+         branches:[{n:"01",t:"Strategic rationale"},{n:"02",t:"Target valuation and synergies"},{n:"03",t:"Integration risk"},{n:"04",t:"Alternatives to the deal"}],
+         trap:"Treating exhibit synergy numbers as fact instead of stress-testing them."},
+        {name:"Pricing", source:"IIM A p.44", when:"New product price, or repricing an existing line.",
+         branches:[{n:"01",t:"Cost-based floor"},{n:"02",t:"Competitor benchmark"},{n:"03",t:"Value to customer ceiling"},{n:"04",t:"Elasticity and cannibalisation"}],
+         trap:"Giving one number without the volume response that comes with it."},
+        {name:"Market sizing", source:"IIM C p.5", when:"Guesstimates and any prompt needing a defensible number.",
+         branches:[{n:"01",t:"Top-down or bottom-up, and say why"},{n:"02",t:"Segment the population"},{n:"03",t:"Penetration and frequency"},{n:"04",t:"Sanity check against a known anchor"}],
+         trap:"Assumptions you cannot defend. State each one out loud as you use it."},
+        {name:"Operations", source:"IIM B p.31", when:"Throughput, capacity and turnaround-time problems.",
+         branches:[{n:"01",t:"Map the process end to end"},{n:"02",t:"Find the bottleneck step"},{n:"03",t:"Capacity vs. demand at that step"},{n:"04",t:"Fix, then re-check the new bottleneck"}],
+         trap:"Optimising a non-bottleneck step, which buys nothing."}
+      ],
+      books: [
+        {title:"Case in Point", meta:"Cosentino · 12th ed · 340 pp"},
+        {title:"Case Interview Secrets", meta:"Cheng · 260 pp"},
+        {title:"Crack the Case System", meta:"Cosentino · 220 pp"},
+        {title:"Estimation compendium", meta:"ISB CCC · 96 pp"},
+        {title:"Mental math sheets", meta:"Daily 10-minute sets"}
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

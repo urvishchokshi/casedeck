@@ -1,10 +1,10 @@
 @AGENTS.md
 
-# CasePrep
+# Casedeck
 
 ## Project
 
-CasePrep — case interview prep platform for ISB students. Case library with filters, progress tracking, partner matching, casebook downloads, frameworks. Content is extracted from IIM casebook PDFs via a manual Claude-assisted pipeline (scripts split PDFs and render images; extraction JSON is produced in claude.ai chats and bulk-imported). ~200-300 users, ISB-only via Microsoft login with @isb.edu enforcement.
+Casedeck (formerly CasePrep) — case interview prep platform for ISB students. Case library with filters, progress tracking, partner matching, casebook downloads, frameworks. Content is extracted from IIM casebook PDFs via a manual Claude-assisted pipeline (scripts split PDFs and render images; extraction JSON is produced in claude.ai chats and bulk-imported). ~200-300 users, ISB-only via Microsoft login with @isb.edu enforcement.
 
 ## Stack
 
@@ -16,10 +16,18 @@ CasePrep — case interview prep platform for ISB students. Case library with fi
 
 ## Conventions
 
-- All colors/radii/type sizes come from CSS variables in `src/app/globals.css` — **NEVER hardcode hex values in components** (the theme will be swapped in later). Consume tokens via Tailwind arbitrary values, e.g. `bg-[var(--color-surface)]`.
+- All colors/radii/shadows come from CSS variables in `src/app/globals.css` — **NEVER hardcode hex values in components**. Consume tokens via Tailwind arbitrary values, e.g. `bg-[var(--card)]`. Font sizes are px literals matching the design (e.g. `text-[13.5px]`).
 - Shared UI primitives live in `src/components/ui/` (Button, Card, Pill, Collapsible); other shared components in `src/components/`.
 - Everything strictly typed. No `any`.
 - Server components by default; add `"use client"` only where interactivity requires it.
+
+## Design
+
+`design/casedeck-v2.html` is the **visual reference ONLY** — its extra features (countdown/target widget, per-case minutes, client/objective/interviewer-style metadata, nav badges, sort controls, cohort stats, rating modal) are out of scope. Adopt only its look.
+
+- **Tokens** (`src/app/globals.css` `:root`): `--ink` #171a19 (text), `--canvas` #f6f5f1 (page bg), `--card` #fff, `--line` / `--line-soft` (borders), `--muted`, `--accent` #15614e (+ `--accent-hover`, `--accent-50/100/200`), `--amber` #a4632c + `--amber-50` (ratings), `--chip` #f1efe9 (neutral pills), `--thead` #fbfaf7 (table header / hover tint), `--on-accent` #fff, `--status-active/idle` (dots); radii `--r` 12px (cards), `--rs` 8px (buttons/inputs), pills are `rounded-full`; shadow `--sh`; composite surfaces `--login-panel` (login right panel gradient), `--ph` (striped image placeholder).
+- **Fonts** (next/font/google, variables on `<body>`): `--font-display` Instrument Serif 400 normal+italic (all headings, weight 400, tight line-height — h1–h4 styled globally in globals.css); `--font-ui` Plus Jakarta Sans 400–700 (body, 15px/1.55); `--font-mono` IBM Plex Mono 400/500 (source-file lines, e.g. `font-[family-name:var(--font-mono)]`).
+- **Component patterns**: white cards with `--line` border, `--r` radius, `--sh` shadow; buttons 40px tall, `--rs` radius, 13.5px semibold (primary solid accent, secondary outline); pills via `Pill` tones (`chip` neutral, `accent` for case type/done, `amber` for ★ ratings); table headers uppercase 11px letter-spaced on `--thead`; filter rows = 96px muted label + wrapping pill chips (selected = accent bg, white text); sidebar 238px white with dot-indicator nav (active = accent on accent-50 pill); brand mark = 26px/7px-radius accent square with white bold "C" + bold wordmark (`src/components/Brand.tsx`).
 
 ## Database
 
@@ -49,6 +57,7 @@ Schema lives in `supabase/migrations/0001_init.sql` (applied manually in the Sup
 
 - **Phase 0.1: app shell — DONE** (routes, sidebar/drawer layout, UI primitives, placeholder pages, design tokens)
 - **Phase 0.2: Supabase + schema — DONE** (supabase-js + ssr clients, full migration with RLS + triggers + private storage bucket, shared types)
+- **Theme: Casedeck design system — DONE** (rename CasePrep → Casedeck, new tokens/fonts, full reskin of shell + all placeholder pages)
 
 Upcoming:
 

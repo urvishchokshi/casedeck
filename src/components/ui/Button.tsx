@@ -7,13 +7,13 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const baseClasses =
-  "inline-flex items-center justify-center gap-2 rounded-[var(--radius-control)] px-4 py-2 text-[length:var(--font-size-sm)] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-[var(--rs)] px-[15px] text-[13.5px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50";
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "bg-[var(--color-accent)] text-[var(--color-accent-foreground)] hover:bg-[var(--color-accent-hover)]",
+    "bg-[var(--accent)] text-[var(--on-accent)] hover:bg-[var(--accent-hover)]",
   secondary:
-    "border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-accent-soft)]",
+    "border border-[var(--line)] bg-[var(--card)] text-[var(--ink)] hover:bg-[var(--thead)]",
 };
 
 export function Button({

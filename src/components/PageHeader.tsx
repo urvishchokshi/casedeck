@@ -5,14 +5,10 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, subtitle }: PageHeaderProps) {
   return (
-    <header className="mb-8">
-      <h1 className="text-[length:var(--font-size-2xl)] font-bold tracking-tight text-[var(--color-text)]">
-        {title}
-      </h1>
+    <header className="mb-[22px]">
+      <h1 className="text-[40px] text-[var(--ink)]">{title}</h1>
       {subtitle && (
-        <p className="mt-1 text-[length:var(--font-size-sm)] text-[var(--color-text-muted)]">
-          {subtitle}
-        </p>
+        <p className="mt-1 text-[14px] text-[var(--muted)]">{subtitle}</p>
       )}
     </header>
   );

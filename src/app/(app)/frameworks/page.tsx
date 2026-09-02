@@ -18,14 +18,13 @@ export default function FrameworksPage() {
         subtitle="Core structures for cracking case interviews"
       />
 
-      <Card className="divide-y divide-[var(--color-border)] p-0">
+      <Card className="divide-y divide-[var(--line-soft)] overflow-hidden p-0">
         {frameworks.map((framework) => (
-          <div
-            key={framework}
-            className="px-5 py-4 text-[length:var(--font-size-sm)] font-medium text-[var(--color-text)]"
-          >
-            {framework}
-            <p className="mt-0.5 text-[length:var(--font-size-xs)] font-normal text-[var(--color-text-muted)]">
+          <div key={framework} className="px-[18px] py-3.5">
+            <p className="text-[15.5px] font-semibold tracking-[-0.01em] text-[var(--ink)]">
+              {framework}
+            </p>
+            <p className="mt-0.5 text-[12.5px] text-[var(--muted)]">
               Study notes coming soon
             </p>
           </div>

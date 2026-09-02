@@ -25,14 +25,14 @@ export default function CasebooksPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {casebooks.map((book) => (
-          <Card key={book.title}>
-            <h2 className="text-[length:var(--font-size-base)] font-semibold text-[var(--color-text)]">
-              {book.title}
-            </h2>
-            <p className="mt-1 text-[length:var(--font-size-sm)] text-[var(--color-text-muted)]">
-              {book.meta}
-            </p>
-            <Button variant="secondary" disabled className="mt-4">
+          <Card key={book.title} className="flex flex-col gap-3">
+            <div>
+              <h2 className="font-[family-name:var(--font-ui)] text-[19px] font-semibold leading-tight tracking-[-0.01em] text-[var(--ink)]">
+                {book.title}
+              </h2>
+              <p className="mt-1 text-[12px] text-[var(--muted)]">{book.meta}</p>
+            </div>
+            <Button variant="secondary" disabled className="self-start">
               <Download size={16} />
               Download PDF
             </Button>
