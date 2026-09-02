@@ -1,26 +1,44 @@
 @import "tailwindcss";
 
+/*
+ * CasePrep design system — placeholder theme.
+ * Every color, radius, and font size used anywhere in the app is defined
+ * here as a CSS variable. Components consume these via Tailwind arbitrary
+ * values (e.g. bg-[var(--color-bg)]), so the entire theme can be swapped
+ * by editing this file alone.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  /* Colors */
+  --color-bg: #fafaf9;
+  --color-surface: #ffffff;
+  --color-border: #e2e8f0;
+  --color-text: #1e293b;
+  --color-text-muted: #64748b;
+  --color-accent: #1e3a5f;
+  --color-accent-hover: #16304f;
+  --color-accent-foreground: #ffffff;
+  --color-accent-soft: #eef2f7;
+  --color-placeholder: #e7e5e4;
+  --color-status-active: #22c55e;
+  --color-status-idle: #cbd5e1;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Radii */
+  --radius-card: 12px;
+  --radius-control: 8px;
+  --radius-pill: 9999px;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Font sizes */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.375rem;
+  --font-size-2xl: 1.75rem;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    sans-serif;
 }

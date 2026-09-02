@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CasePrep
 
-## Getting Started
+Case interview preparation platform for ISB students — a central place to browse cases, track practice progress, find mock-interview partners, and access casebooks and frameworks during placement prep.
 
-First, run the development server:
+> **Status:** app shell with placeholder pages. Auth, database, and real content come in later phases.
+
+## Stack
+
+- [Next.js](https://nextjs.org) (App Router) + TypeScript
+- Tailwind CSS v4 (design tokens as CSS variables in `src/app/globals.css`)
+- [lucide-react](https://lucide.dev) icons
+- Planned: Supabase (auth + Postgres), deployed on Vercel
+
+## Run locally
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) — you'll be redirected to `/cases`. Other routes: `/login`, `/dashboard`, `/match`, `/casebooks`, `/frameworks`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Production build:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+## Design system
 
-To learn more about Next.js, take a look at the following resources:
+All colors, radii, and font sizes are CSS variables defined on `:root` in `src/app/globals.css`. Components only consume tokens via Tailwind arbitrary values (e.g. `bg-[var(--color-bg)]`) — no hardcoded hex values — so the entire theme can be swapped by editing that one file.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+src/
+  app/
+    (app)/            # authenticated pages, wrapped in the AppShell layout
+      cases/          # /cases and /cases/[id]
+      dashboard/
+      match/
+      casebooks/
+      frameworks/
+    login/            # standalone page, no sidebar
+    page.tsx          # / → redirects to /cases
+  components/
+    AppShell.tsx      # sidebar (desktop) / top bar + drawer (mobile)
+    PageHeader.tsx
+    ui/               # Button, Card, Pill, Collapsible
+```
 
-## Deploy on Vercel
+## Roadmap
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Supabase schema** — tables for cases, casebooks, users, progress, ratings, partner profiles
+2. **Microsoft auth** — Azure AD sign-in restricted to `@isb.edu` accounts via Supabase Auth
+3. **Content pipeline** — ingest casebook PDFs into structured case records
+4. **Case library** — real search, filters, case detail with solutions
+5. **Tracking** — mark done / self-score / save for later, dashboard stats and charts
+6. **Matching** — practice-partner discovery with availability and WhatsApp reveal
