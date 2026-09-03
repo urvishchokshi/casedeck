@@ -22,6 +22,7 @@ interface CaseListRow {
   title: string;
   case_types: string[];
   industry: string | null;
+  company: string | null;
   difficulty: DifficultyLevel | null;
   avg_rating: number | null;
   rating_count: number;
@@ -44,12 +45,17 @@ function Rating({ c }: { c: CaseListRow }) {
   );
 }
 
-export default async function CasesPage() {
+export default async function CasesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const { company: companyParam } = await searchParams;
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("cases")
     .select(
-      "id, title, case_types, industry, difficulty, avg_rating, rating_count, source_start_page, casebook:casebooks(name)"
+      "id, title, case_types, industry, company, difficulty, avg_rating, rating_count, source_start_page, casebook:casebooks(name)"
     )
     // Deterministic server-side order so the PostgREST row cap can never drop
     // an arbitrary subset; display order (by casebook name) is applied below.
@@ -66,13 +72,33 @@ export default async function CasesPage() {
       a.source_start_page - b.source_start_page
   );
 
+  // Company is the first live filter (?company=…); the other groups stay
+  // disabled placeholders until Phase 2.2. Unknown param values are ignored.
+  const companies = [
+    ...new Set(
+      cases.map((c) => c.company).filter((v): v is string => v !== null)
+    ),
+  ].sort((a, b) => a.localeCompare(b));
+  const activeCompany =
+    typeof companyParam === "string" && companies.includes(companyParam)
+      ? companyParam
+      : null;
+  // Filtering on a whitelisted company always matches ≥1 row, so the
+  // cases.length === 0 empty state below stays correct. Phase 2.2 filters
+  // that can yield zero rows will need a "no matches" branch on visibleCases.
+  const visibleCases = activeCompany
+    ? cases.filter((c) => c.company === activeCompany)
+    : cases;
+
   return (
     <div>
       <div className="mb-[22px] flex flex-wrap items-end justify-between gap-6">
         <div>
           <h1 className="text-[40px] text-[var(--ink)]">Case library</h1>
           <p className="mt-1 text-[14px] text-[var(--muted)]">
-            {cases.length} {cases.length === 1 ? "case" : "cases"}
+            {activeCompany
+              ? `${visibleCases.length} of ${cases.length} ${cases.length === 1 ? "case" : "cases"} · ${activeCompany}`
+              : `${cases.length} ${cases.length === 1 ? "case" : "cases"}`}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -94,6 +120,42 @@ export default async function CasesPage() {
       </div>
 
       <div className="mb-[18px] flex flex-col gap-[11px] rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] px-[18px] py-4 [box-shadow:var(--sh)]">
+        <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-[96px_1fr] sm:gap-3.5">
+          <div className="text-[11.5px] font-semibold text-[var(--muted)]">
+            Company
+          </div>
+          {companies.length === 0 ? (
+            <div className="text-[12px] text-[var(--muted)]">
+              No company data yet
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              <Link
+                href="/cases"
+                className={`rounded-full px-[11px] py-1 text-[12px] font-semibold ${
+                  activeCompany === null
+                    ? "bg-[var(--accent)] text-[var(--on-accent)]"
+                    : "border border-[var(--line)] bg-[var(--card)] text-[var(--ink)] transition-colors hover:bg-[var(--thead)]"
+                }`}
+              >
+                All
+              </Link>
+              {companies.map((name) => (
+                <Link
+                  key={name}
+                  href={`/cases?company=${encodeURIComponent(name)}`}
+                  className={`rounded-full px-[11px] py-1 text-[12px] font-semibold ${
+                    activeCompany === name
+                      ? "bg-[var(--accent)] text-[var(--on-accent)]"
+                      : "border border-[var(--line)] bg-[var(--card)] text-[var(--ink)] transition-colors hover:bg-[var(--thead)]"
+                  }`}
+                >
+                  {name}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
         {filterGroups.map((group) => (
           <div
             key={group.label}
@@ -139,6 +201,7 @@ export default async function CasesPage() {
                 <tr className="bg-[var(--thead)]">
                   <th className={`${thClasses} w-[34%]`}>Case</th>
                   <th className={thClasses}>Casebook</th>
+                  <th className={thClasses}>Company</th>
                   <th className={thClasses}>Industry</th>
                   <th className={thClasses}>Type</th>
                   <th className={thClasses}>Difficulty</th>
@@ -147,7 +210,7 @@ export default async function CasesPage() {
                 </tr>
               </thead>
               <tbody>
-                {cases.map((c) => (
+                {visibleCases.map((c) => (
                   <tr
                     key={c.id}
                     className="relative transition-colors hover:bg-[var(--thead)]"
@@ -167,6 +230,13 @@ export default async function CasesPage() {
                     </td>
                     <td className={`${tdClasses} text-[var(--muted)]`}>
                       {c.casebook?.name ?? "—"}
+                    </td>
+                    <td className={tdClasses}>
+                      {c.company ? (
+                        <Pill>{c.company}</Pill>
+                      ) : (
+                        <span className="text-[var(--muted)]">—</span>
+                      )}
                     </td>
                     <td className={tdClasses}>
                       {c.industry ? (
@@ -203,7 +273,7 @@ export default async function CasesPage() {
 
           {/* Mobile stacked cards */}
           <div className="flex flex-col gap-3 md:hidden">
-            {cases.map((c) => (
+            {visibleCases.map((c) => (
               <Link
                 key={c.id}
                 href={`/cases/${c.id}`}
@@ -221,6 +291,7 @@ export default async function CasesPage() {
                       {t}
                     </Pill>
                   ))}
+                  {c.company && <Pill>{c.company}</Pill>}
                   {c.difficulty && <Pill>{c.difficulty}</Pill>}
                   {c.rating_count > 0 && c.avg_rating !== null ? (
                     <Pill tone="amber">★ {c.avg_rating.toFixed(1)}</Pill>
