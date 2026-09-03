@@ -2,20 +2,17 @@ import Link from "next/link";
 import { Pill } from "@/components/ui/Pill";
 import { createClient } from "@/lib/supabase/server";
 import type { DifficultyLevel } from "@/lib/types";
-
-interface FilterGroup {
-  label: string;
-  options: string[];
-}
-
-const filterGroups: FilterGroup[] = [
-  { label: "Difficulty", options: ["Easy", "Medium", "Hard"] },
-  { label: "Industry", options: ["Aviation", "FMCG", "Pharma", "Auto", "E-commerce", "BFSI"] },
-  { label: "Type", options: ["Profitability", "Market Entry", "Pricing", "Growth", "Operations"] },
-  { label: "Rating", options: ["4★ & up", "3★ & up", "Any"] },
-  { label: "Casebook", options: ["ISB 2025", "IIM A", "IIM B", "IIM C"] },
-  { label: "Status", options: ["Not started", "Done", "Marked for later"] },
-];
+import {
+  parseCaseFilters,
+  sanitizeSearchQuery,
+  countActiveFilters,
+  type FilterOption,
+} from "@/lib/case-filters";
+import {
+  CaseFilterGroups,
+  CaseSearchControls,
+  type ChipGroup,
+} from "./CaseFilters";
 
 interface CaseListRow {
   id: string;
@@ -28,6 +25,13 @@ interface CaseListRow {
   rating_count: number;
   source_start_page: number;
   casebook: { name: string } | null;
+}
+
+interface FacetRow {
+  case_types: string[];
+  industry: string | null;
+  difficulty: DifficultyLevel | null;
+  company: string | null;
 }
 
 const thClasses =
@@ -45,50 +49,122 @@ function Rating({ c }: { c: CaseListRow }) {
   );
 }
 
+const DIFFICULTY_ORDER: readonly string[] = ["Easy", "Medium", "Hard"];
+
+/**
+ * Distinct sorted values unioned with any selected-but-unknown values, so a
+ * stale shared URL still renders a removable accent chip instead of an
+ * invisible active filter.
+ */
+function toOptions(values: Iterable<string>, selected: string[]): FilterOption[] {
+  const distinct = [...new Set([...values, ...selected])].sort((a, b) =>
+    a.localeCompare(b)
+  );
+  return distinct.map((value) => ({ value, label: value }));
+}
+
 export default async function CasesPage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const { company: companyParam } = await searchParams;
+  const filters = parseCaseFilters(await searchParams);
   const supabase = await createClient();
-  const { data, error } = await supabase
+
+  // One filtered query; every case has a casebook (casebook_id NOT NULL), so
+  // the !inner embed is lossless and lets ?casebook= filter on the slug.
+  let query = supabase
     .from("cases")
     .select(
-      "id, title, case_types, industry, company, difficulty, avg_rating, rating_count, source_start_page, casebook:casebooks(name)"
+      "id, title, case_types, industry, company, difficulty, avg_rating, rating_count, source_start_page, casebook:casebooks!inner(name)"
     )
-    // Deterministic server-side order so the PostgREST row cap can never drop
-    // an arbitrary subset; display order (by casebook name) is applied below.
+    // Deterministic server-side order so the row caps can never drop an
+    // arbitrary subset; display order (by casebook name) is applied below.
     .order("casebook_id")
-    .order("source_start_page");
+    .order("source_start_page")
+    // Guard against unbounded growth; pagination is a future enhancement.
+    .limit(500);
+  if (filters.types.length) query = query.overlaps("case_types", filters.types);
+  if (filters.difficulties.length)
+    query = query.in("difficulty", filters.difficulties);
+  if (filters.industries.length)
+    query = query.in("industry", filters.industries);
+  if (filters.companies.length) query = query.in("company", filters.companies);
+  if (filters.casebooks.length)
+    query = query.in("casebook.slug", filters.casebooks);
+  if (filters.rating !== null) query = query.gte("avg_rating", filters.rating);
+  const safeQ = sanitizeSearchQuery(filters.q);
+  if (safeQ)
+    query = query.or(`title.ilike.%${safeQ}%,company.ilike.%${safeQ}%`);
 
-  if (error) {
-    throw new Error(`Failed to load cases: ${error.message}`);
+  const [casesRes, facetsRes, casebooksRes] = await Promise.all([
+    query,
+    // Unfiltered facet source: chip options always reflect the whole library.
+    // Subject to the PostgREST default row cap (1000) — fine at current scale;
+    // revisit alongside pagination.
+    supabase.from("cases").select("case_types, industry, difficulty, company"),
+    supabase.from("casebooks").select("slug, name").order("name"),
+  ]);
+  const firstError = casesRes.error ?? facetsRes.error ?? casebooksRes.error;
+  if (firstError) {
+    throw new Error(`Failed to load cases: ${firstError.message}`);
   }
 
-  const cases = ((data ?? []) as unknown as CaseListRow[]).sort(
+  const cases = ((casesRes.data ?? []) as unknown as CaseListRow[]).sort(
     (a, b) =>
       (a.casebook?.name ?? "").localeCompare(b.casebook?.name ?? "") ||
       a.source_start_page - b.source_start_page
   );
+  const facets = (facetsRes.data ?? []) as unknown as FacetRow[];
+  const casebooks = casebooksRes.data ?? [];
+  const totalCases = facets.length;
+  const activeCount = countActiveFilters(filters);
 
-  // Company is the first live filter (?company=…); the other groups stay
-  // disabled placeholders until Phase 2.2. Unknown param values are ignored.
-  const companies = [
-    ...new Set(
-      cases.map((c) => c.company).filter((v): v is string => v !== null)
-    ),
-  ].sort((a, b) => a.localeCompare(b));
-  const activeCompany =
-    typeof companyParam === "string" && companies.includes(companyParam)
-      ? companyParam
-      : null;
-  // Filtering on a whitelisted company always matches ≥1 row, so the
-  // cases.length === 0 empty state below stays correct. Phase 2.2 filters
-  // that can yield zero rows will need a "no matches" branch on visibleCases.
-  const visibleCases = activeCompany
-    ? cases.filter((c) => c.company === activeCompany)
-    : cases;
+  const nonNull = (values: (string | null)[]) =>
+    values.filter((v): v is string => v !== null);
+  const chipGroups: ChipGroup[] = [
+    {
+      label: "Difficulty",
+      param: "difficulty" as const,
+      options: toOptions(
+        nonNull(facets.map((f) => f.difficulty)),
+        filters.difficulties
+      ).sort(
+        (a, b) =>
+          DIFFICULTY_ORDER.indexOf(a.value) - DIFFICULTY_ORDER.indexOf(b.value)
+      ),
+      selected: filters.difficulties,
+    },
+    {
+      label: "Industry",
+      param: "industry" as const,
+      options: toOptions(nonNull(facets.map((f) => f.industry)), filters.industries),
+      selected: filters.industries,
+    },
+    {
+      label: "Type",
+      param: "type" as const,
+      options: toOptions(facets.flatMap((f) => f.case_types), filters.types),
+      selected: filters.types,
+    },
+    {
+      label: "Company",
+      param: "company" as const,
+      options: toOptions(nonNull(facets.map((f) => f.company)), filters.companies),
+      selected: filters.companies,
+    },
+    {
+      label: "Casebook",
+      param: "casebook" as const,
+      options: [
+        ...casebooks.map((cb) => ({ value: cb.slug, label: cb.name })),
+        ...filters.casebooks
+          .filter((slug) => !casebooks.some((cb) => cb.slug === slug))
+          .map((slug) => ({ value: slug, label: slug })),
+      ],
+      selected: filters.casebooks,
+    },
+  ].filter((group) => group.options.length > 0);
 
   return (
     <div>
@@ -96,91 +172,19 @@ export default async function CasesPage({
         <div>
           <h1 className="text-[40px] text-[var(--ink)]">Case library</h1>
           <p className="mt-1 text-[14px] text-[var(--muted)]">
-            {activeCompany
-              ? `${visibleCases.length} of ${cases.length} ${cases.length === 1 ? "case" : "cases"} · ${activeCompany}`
-              : `${cases.length} ${cases.length === 1 ? "case" : "cases"}`}
+            {`${cases.length} ${cases.length === 1 ? "case" : "cases"}`}
+            {activeCount > 0 &&
+              ` · ${activeCount} ${activeCount === 1 ? "filter" : "filters"} active`}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <input
-            type="search"
-            disabled
-            aria-label="Search cases"
-            placeholder="Search case, company, casebook…"
-            className="h-[38px] w-[290px] max-w-full rounded-full border border-[var(--line)] bg-[var(--card)] px-[13px] text-[13.5px] text-[var(--ink)] placeholder:text-[var(--muted)] disabled:cursor-not-allowed disabled:opacity-60"
-          />
-          <button
-            type="button"
-            disabled
-            className="h-[38px] whitespace-nowrap rounded-full border border-[var(--line)] bg-[var(--card)] px-[15px] text-[13.5px] font-semibold text-[var(--ink)] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Reset
-          </button>
-        </div>
+        <CaseSearchControls filters={filters} />
       </div>
 
       <div className="mb-[18px] flex flex-col gap-[11px] rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] px-[18px] py-4 [box-shadow:var(--sh)]">
-        <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-[96px_1fr] sm:gap-3.5">
-          <div className="text-[11.5px] font-semibold text-[var(--muted)]">
-            Company
-          </div>
-          {companies.length === 0 ? (
-            <div className="text-[12px] text-[var(--muted)]">
-              No company data yet
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-1.5">
-              <Link
-                href="/cases"
-                className={`rounded-full px-[11px] py-1 text-[12px] font-semibold ${
-                  activeCompany === null
-                    ? "bg-[var(--accent)] text-[var(--on-accent)]"
-                    : "border border-[var(--line)] bg-[var(--card)] text-[var(--ink)] transition-colors hover:bg-[var(--thead)]"
-                }`}
-              >
-                All
-              </Link>
-              {companies.map((name) => (
-                <Link
-                  key={name}
-                  href={`/cases?company=${encodeURIComponent(name)}`}
-                  className={`rounded-full px-[11px] py-1 text-[12px] font-semibold ${
-                    activeCompany === name
-                      ? "bg-[var(--accent)] text-[var(--on-accent)]"
-                      : "border border-[var(--line)] bg-[var(--card)] text-[var(--ink)] transition-colors hover:bg-[var(--thead)]"
-                  }`}
-                >
-                  {name}
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-        {filterGroups.map((group) => (
-          <div
-            key={group.label}
-            className="grid grid-cols-1 items-center gap-2 sm:grid-cols-[96px_1fr] sm:gap-3.5"
-          >
-            <div className="text-[11.5px] font-semibold text-[var(--muted)]">
-              {group.label}
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {group.options.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  disabled
-                  className="rounded-full border border-[var(--line)] bg-[var(--card)] px-[11px] py-1 text-[12px] font-semibold text-[var(--ink)] disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
+        <CaseFilterGroups groups={chipGroups} filters={filters} />
       </div>
 
-      {cases.length === 0 ? (
+      {totalCases === 0 ? (
         <div className="grid place-items-center rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] px-6 py-16 text-center [box-shadow:var(--sh)]">
           <div>
             <p className="text-[17px] font-semibold text-[var(--ink)]">
@@ -190,6 +194,23 @@ export default async function CasesPage({
               Import a casebook with the content pipeline and cases will show up
               here.
             </p>
+          </div>
+        </div>
+      ) : cases.length === 0 ? (
+        <div className="grid place-items-center rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] px-6 py-16 text-center [box-shadow:var(--sh)]">
+          <div>
+            <p className="text-[17px] font-semibold text-[var(--ink)]">
+              No cases match your filters
+            </p>
+            <p className="mt-1 text-[14px] text-[var(--muted)]">
+              Try removing some filters or changing your search.
+            </p>
+            <Link
+              href="/cases"
+              className="mt-4 inline-flex h-[38px] items-center rounded-full border border-[var(--line)] bg-[var(--card)] px-[15px] text-[13.5px] font-semibold text-[var(--ink)] transition-colors hover:bg-[var(--thead)]"
+            >
+              Clear filters
+            </Link>
           </div>
         </div>
       ) : (
@@ -210,7 +231,7 @@ export default async function CasesPage({
                 </tr>
               </thead>
               <tbody>
-                {visibleCases.map((c) => (
+                {cases.map((c) => (
                   <tr
                     key={c.id}
                     className="relative transition-colors hover:bg-[var(--thead)]"
@@ -273,7 +294,7 @@ export default async function CasesPage({
 
           {/* Mobile stacked cards */}
           <div className="flex flex-col gap-3 md:hidden">
-            {visibleCases.map((c) => (
+            {cases.map((c) => (
               <Link
                 key={c.id}
                 href={`/cases/${c.id}`}

@@ -60,6 +60,15 @@ Schema lives in `supabase/migrations/` (`0001_init.sql` base, `0002_pipeline_tag
 - Schema changes ONLY via new numbered files in `supabase/migrations/` — never edit an already-applied migration.
 - The user applies migrations manually in the Supabase SQL editor. After writing a migration, always tell them to run it.
 
+## Case library filters
+
+/cases filter/search architecture (Phase 2.2):
+
+- **URL search params are the single source of truth** (`?type=A&type=B&difficulty=Easy&industry=…&company=…&casebook=<slug>&rating=4&q=…`) — views are shareable/bookmarkable and back/forward work. Parsing/serializing/counting lives in `src/lib/case-filters.ts` (`parseCaseFilters` validates `difficulty` against the enum and `rating` ∈ {3,4}; text params pass through — unknown values just match nothing).
+- **Semantics**: multi-select within a group = OR (`case_types` via array overlap); across groups = AND. Rating is single-select (`gte avg_rating`). Search `q` = case-insensitive `ilike` on title OR company, sanitized by **stripping** PostgREST/LIKE metacharacters (`sanitizeSearchQuery`) before interpolation into `.or()`.
+- **Server side** (`src/app/(app)/cases/page.tsx`, server component): one filtered Supabase query (`overlaps` for type, `.in` for difficulty/industry/company, `casebooks!inner` embed + `.in("casebook.slug", …)` for casebook — lossless since `casebook_id` is NOT NULL) + an unfiltered facet query deriving distinct chip options + a `casebooks` list, all in one `Promise.all`. Chip options are unioned with selected-but-unknown values so stale URLs render removable chips. Query capped at `.limit(500)` — pagination is a future enhancement if needed.
+- **Client side** (`src/app/(app)/cases/CaseFilters.tsx`): chip toggles + 300ms-debounced search push `router.replace(…, { scroll: false })`; filter state arrives as props from the server (no `useSearchParams`, so no Suspense boundary needed). Status chips are disabled placeholders (`title="Coming soon"`) until Phase 3; the Rating row always renders even while all ratings are null.
+
 ## Pipeline
 
 Content extraction pipeline (`pipeline/` + `scripts/pipeline/`). Full workflow doc: `pipeline/README.md`. Scripts run via tsx, outside the Next build. **Note:** pipeline scripts are `.mts` — the `mupdf` package is ESM-only (top-level await) and the repo has no `"type": "module"`, so `.ts` scripts would be compiled as CJS and fail to import it.
@@ -90,9 +99,10 @@ Content extraction pipeline (`pipeline/` + `scripts/pipeline/`). Full workflow d
 - **Phase 2.1 (minimal viewer) — DONE** (/cases library table + mobile cards on real data with dynamic tag pills; /cases/[id] detail: source line, tag pills, prompt, collapsible transcript with shaded interviewer turns, exhibit/solution images via 1h signed URLs from the private bucket; filters + tracking buttons remain disabled placeholders)
 - **Phase 2.1.1 — DONE** (visual-QA fixes: `company` field end-to-end — `0003_company.sql`, extraction prompt firm-attribution rule, import script; extra_tags dropped from the library table, desktop subline reduced to "p. N"; detail pill row gains company + muted extra_tags pills)
 - **Phase 2.1.2 — DONE** (library table gains a Company column — columns now Case / Casebook / Company / Industry / Type / Difficulty / Rating / Status — plus the first working filter: a Company filter row driven by `?company=` searchParams with options derived from the data; other filter groups remain disabled placeholders for Phase 2.2. ⚠️ /cases now selects `company` explicitly, so migration 0003 must be applied)
+- **Phase 2.2 — DONE** (dynamic filter + search system for /cases; see "Case library filters" section)
 
 Upcoming:
-- Phase 2: case library (2.2+: search, filters, status column)
+- Phase 2: case library (2.3+: status column)
 - Phase 3: tracking
 - Phase 4: matching
 - Phase 5: casebooks/frameworks
