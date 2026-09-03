@@ -37,6 +37,14 @@ yarn-error.log*
 # vercel
 .vercel
 
+# content pipeline (large PDFs / generated chunks / extraction inbox)
+/pipeline/source/*
+!/pipeline/source/.gitkeep
+/pipeline/chunks/*
+!/pipeline/chunks/.gitkeep
+/pipeline/inbox/*
+!/pipeline/inbox/.gitkeep
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
