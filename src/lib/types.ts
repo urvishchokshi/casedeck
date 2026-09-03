@@ -77,3 +77,25 @@ export interface MatchProfile {
   status: PartnerStatus;
   updated_at: string;
 }
+
+export interface Framework {
+  id: string;
+  /** Globally unique — the import script's upsert key. */
+  title: string;
+  description: string | null;
+  casebook_id: string | null;
+  /** Ordered storage paths in the private case-images bucket — sign at read time. */
+  image_paths: string[];
+  sort_order: number;
+  created_at: string;
+}
+
+export interface Material {
+  id: string;
+  title: string;
+  description: string | null;
+  /** Storage path in the private library-files bucket — sign at read time. */
+  file_path: string;
+  sort_order: number;
+  created_at: string;
+}

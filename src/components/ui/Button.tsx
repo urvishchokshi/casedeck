@@ -1,15 +1,16 @@
 import type { ButtonHTMLAttributes } from "react";
 
-type ButtonVariant = "primary" | "secondary";
+export type ButtonVariant = "primary" | "secondary";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
 }
 
-const baseClasses =
+// Exported so ButtonLink can render an anchor with identical styling.
+export const buttonBaseClasses =
   "inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-[var(--rs)] px-[15px] text-[13.5px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50";
 
-const variantClasses: Record<ButtonVariant, string> = {
+export const buttonVariantClasses: Record<ButtonVariant, string> = {
   primary:
     "bg-[var(--accent)] text-[var(--on-accent)] hover:bg-[var(--accent-hover)]",
   secondary:
@@ -23,7 +24,7 @@ export function Button({
 }: ButtonProps) {
   return (
     <button
-      className={`${baseClasses} ${variantClasses[variant]} ${className}`}
+      className={`${buttonBaseClasses} ${buttonVariantClasses[variant]} ${className}`}
       {...props}
     />
   );

@@ -44,16 +44,18 @@ Microsoft (Azure) OAuth via Supabase Auth, restricted to `@isb.edu` accounts.
 
 ## Database
 
-Schema lives in `supabase/migrations/` (`0001_init.sql` base, `0002_pipeline_tags.sql` pipeline tag columns, `0003_company.sql` consulting-firm attribution; applied manually in the Supabase SQL editor). TypeScript mirrors in `src/lib/types.ts`; clients in `src/lib/supabase/` (`client.ts` browser, `server.ts` cookie-based SSR).
+Schema lives in `supabase/migrations/` (`0001_init.sql` base, `0002_pipeline_tags.sql` pipeline tag columns, `0003_company.sql` consulting-firm attribution, `0004_library.sql` frameworks/materials + library-files bucket; applied manually in the Supabase SQL editor). TypeScript mirrors in `src/lib/types.ts`; clients in `src/lib/supabase/` (`client.ts` browser, `server.ts` cookie-based SSR).
 
 - `profiles` — one row per user, auto-created by a trigger on `auth.users` insert; `is_admin` is protected by column-level grants (users can only update `full_name`/`campus`)
-- `casebooks` — one per IIM casebook (`slug` unique, optional `pdf_url` for downloads)
+- `casebooks` — one per IIM casebook (`slug` unique; `pdf_url` holds the PDF's **storage path** in the `library-files` bucket — a path, NOT a URL; null = no PDF yet, set by `npm run upload-book`)
 - `cases` — case content: `prompt`, transcript jsonb (`[{speaker: "interviewer"|"candidate", text}]` turns), solution/exhibit image columns (hold **storage paths**, not URLs), dynamic tags (`case_types`/`extra_tags` `text[]` with GIN indexes, `tags_inferred`), nullable `industry`/`difficulty`/`company` (consulting-firm attribution, verbatim, indexed), `source_start_page` + `printed_pages`, rating aggregates (`avg_rating`, `rating_count` maintained by trigger). **Idempotency key: `UNIQUE (casebook_id, source_start_page)`** — re-imports overwrite in place
 - `user_case_progress` — per-user per-case: completed, marked_for_later, self_score (1–10), quality_rating (1–5); `UNIQUE (user_id, case_id)`
 - `match_profiles` — partner-matching profile, one row per user (PK = user_id)
+- `frameworks` — framework/theory pages: **globally** `UNIQUE (title)` (the import-frameworks upsert key — cross-book title collisions overwrite), nullable `description`, nullable `casebook_id` (on delete **set null** → entry regroups under "General"), `image_paths` jsonb (ordered **storage paths in `case-images`** — same objects the case importer renders), `sort_order`. Select-only RLS; writes service-role only (import script)
+- `materials` — standalone study-material downloads: `title`, nullable `description`, `file_path` (storage path in `library-files`), `sort_order`. Select-only RLS; rows added manually via Studio (no script)
 - Enums: `difficulty_level`, `partner_status`, `mode_pref`, `campus_type`
-- RLS enabled on all tables: users read shared content and write only their own rows; casebooks/cases/storage writes are service-role only (import pipeline)
-- Storage: **private** bucket `case-images` (authenticated read; service-role writes). Serve via signed URLs.
+- RLS enabled on all tables: users read shared content and write only their own rows; casebooks/cases/frameworks/materials/storage writes are service-role only (import pipeline / Studio)
+- Storage: **private** buckets `case-images` (case + framework page renders) and `library-files` (casebook PDFs + study-material files) — authenticated read, service-role writes. Serve via signed URLs.
 
 ## Database rules
 
@@ -99,17 +101,28 @@ Per-user progress on cases (Phase 3.1). Table `user_case_progress` (see Database
 - **Directory cards**: amber initials avatar, campus + mode pills, status dot + label — busy uses `--amber` (deliberate departure from the placeholder's `--status-idle`), available `--status-active`.
 - **Reveal model (honest note)**: every signed-in user's server-rendered payload contains **all** WhatsApp numbers — `RevealWhatsApp.tsx` ("Show WhatsApp" → `wa.me/<digits>` "Open WhatsApp" link, digits-only, `+` stripped) is client-side UX friction, **not a security boundary**. Accepted because the page is authenticated ISB-only and numbers are shared consensually by joining; a real boundary would need an RPC/column-split + policy change.
 
+## Library
+
+/casebooks + /frameworks (Phase 5): read-only download/study pages — server components only, no writes, no filters. Both mint 1h signed URLs at read time (batched `createSignedUrls`, one call per bucket, guarded against empty path arrays; sign failures are `console.error`-logged, never thrown — items degrade individually).
+
+- **/casebooks** (`src/app/(app)/casebooks/page.tsx`): card grid of `casebooks` rows with per-book exact case counts (`{ count: "exact", head: true }` per book — immune to the PostgREST row cap). `pdf_url` signed from `library-files` → primary "Download PDF" (`ButtonLink`, new tab); signing failed → disabled "PDF unavailable"; null → disabled "PDF coming soon".
+- **/frameworks** (`src/app/(app)/frameworks/page.tsx`): `frameworks` ordered `sort_order` then title, grouped by `casebook_id` (label from the `casebook:casebooks(name)` embed, "From <name>"; null group "General" always last); each entry = serif title + optional description + full-width `ImageCard`s signed from `case-images`. Below it, "Study material": compact list of `materials` rows with signed `library-files` Download buttons — section hidden entirely when the table is empty. Whole-page "Material lands here soon" empty state when both are empty.
+- **Adding study materials (Studio path — no script)**: upload the PDF to the `library-files` bucket via Dashboard → Storage, then insert a `materials` row (title, description, `file_path` = the storage path, sort_order) via Table editor/SQL. No app write path by design.
+- Shared bits extracted in Phase 5: `src/components/ImageCard.tsx` (was local to `/cases/[id]` — crisp full-width render card with click-to-open + "Image unavailable" fallback) and `src/components/ui/ButtonLink.tsx` (plain `<a>` reusing Button's exported class constants, for signed-URL hrefs).
+
 ## Pipeline
 
 Content extraction pipeline (`pipeline/` + `scripts/pipeline/`). Full workflow doc: `pipeline/README.md`. Scripts run via tsx, outside the Next build. **Note:** pipeline scripts are `.mts` — the `mupdf` package is ESM-only (top-level await) and the repo has no `"type": "module"`, so `.ts` scripts would be compiled as CJS and fail to import it.
 
-- **Folder layout**: `pipeline/books.json` (registry `[{ slug, name, college }]`), `plans/` (per-case page plans), `prompts/` (claude.ai prompts), all versioned; `source/` (`<slug>.pdf` casebooks), `chunks/` (generated chunk PDFs + manifest), `inbox/` (extraction JSON from claude.ai chats), all gitignored.
+- **Folder layout**: `pipeline/books.json` (registry `[{ slug, name, college }]`), `plans/` (per-case page plans), `prompts/` (claude.ai prompts), `frameworks/` (per-book framework entries + README), all versioned; `source/` (`<slug>.pdf` casebooks), `chunks/` (generated chunk PDFs + manifest), `inbox/` (extraction JSON from claude.ai chats), all gitignored.
 - **Printed-page/offset convention**: all extraction output uses the page numbers **printed in slide footers**. Each plan/manifest carries `printed_page_offset` satisfying `pdf_page = printed_page + printed_page_offset`; the import script will use it to render solution screenshots from the source PDF.
 - **Plan schema** (`plans/<slug>.json`, produced by the `prompts/split-plan.md` chat): `{ printed_page_offset, cases: [{ index, title, start, end }] }` — `start`/`end` are 1-based PDF pages, inclusive. Overlapping ranges are errors; gaps are warnings (divider pages).
 - **Manifest schema** (`chunks/<slug>/manifest.json`): `{ slug, printed_page_offset, chunks: [{ file, start_page, end_page, case_indices, case_titles }] }`.
 - **Dynamic-tag policy** (in `prompts/extraction.md`): tags come **verbatim from the book's slide header line** — never normalized to a predefined list. First header segment → `case_types` (split on "&"/"/"/"+"/"and" into an array), second → `industry`, difficulty word → nearest of Easy/Medium/Hard, rest → `extra_tags`. A segment (or case text) naming the consulting firm the case comes from → `company` (verbatim; judgment-based firm detection, no fixed list; null when unstated — never inferred; shown as a library column + detail pill, filterable via `?company=`). Missing header → fields are inferred (reusing labels seen elsewhere in the book) and flagged `tags_inferred: true` — but `company` is never inferred.
 - **Chunk workflow**: register book in `books.json` + drop PDF in `source/` → claude.ai chat with `prompts/split-plan.md` + ToC pages produces `plans/<slug>.json` (chat asks for one calibration fact: the PDF page of the first case) → `npm run split -- --book <slug>` validates the plan and writes `chunks/<slug>/chunk-NN_pAAA-pBBB.pdf` (~8 cases each), `manifest.json`, and `_smoke-test.png` (chunk-01 page 1 at 2x, proving the mupdf render path) → per chunk: claude.ai Project (instructions = `prompts/extraction.md`), attach chunk, save JSON array to `inbox/<slug>/` → `npm run import -- --book <slug>`.
 - **Import** (`scripts/pipeline/import.mts`, loads `.env.local` itself for the service-role key): zod-validates every inbox JSON array (code fences stripped; extraction `error` objects and invalid cases go to a skip report, never abort the run; duplicate first-printed-page across files → last wins), renders each needed solution/exhibit page from the **source** PDF at 2x via mupdf (once per unique page), uploads to the private `case-images` bucket at `<slug>/p<printed>.png` (`upsert: true`), and upserts `casebooks` (by slug) + `cases` on **`(casebook_id, source_start_page)`** — `source_start_page` = first printed page. The DB stores **storage paths** in `solution_image_urls`/`exhibit_image_urls`; mint signed URLs at read time. Re-runs are idempotent; inbox files can be kept or deleted.
+- **Casebook PDF upload** (`scripts/pipeline/upload-book.mts`): uploads `source/<slug>.pdf` to `library-files/<slug>.pdf` (upsert) and sets `casebooks.pdf_url` to that storage path. The casebook row must already exist (`npm run import` first) — the script never creates it.
+- **Frameworks import** (`scripts/pipeline/import-frameworks.mts`, doc: `pipeline/frameworks/README.md`): reads `pipeline/frameworks/<slug>.json` — a hand-written (or claude.ai-produced) array of `{ title, description (nullable), printed_pages: number[], sort_order? }` using printed slide-footer page numbers + the plan's `printed_page_offset`. Renders each page at 2x, uploads to `case-images/<slug>/p<printed>.png` — **pages already rendered by the case import are reused by existence, not re-rendered** (delete the storage folder to force fresh renders after a PDF revision) — and upserts `frameworks` on `title`. Invalid entries → skip report; idempotent re-runs. Requires the casebook row to exist.
 
 ## Commands
 
@@ -117,6 +130,8 @@ Content extraction pipeline (`pipeline/` + `scripts/pipeline/`). Full workflow d
 - `npm run build` — production build (must pass with zero errors)
 - `npm run split -- --book <slug> [--chunk-size 8]` — split a casebook PDF into chunk PDFs per its plan
 - `npm run import -- --book <slug>` — validate inbox extraction JSON, render/upload page images, upsert casebook + cases
+- `npm run upload-book -- --book <slug>` — upload the source PDF to `library-files` and set `casebooks.pdf_url`
+- `npm run import-frameworks -- --book <slug>` — validate `pipeline/frameworks/<slug>.json`, render/upload framework pages, upsert `frameworks`
 
 ## Status
 
@@ -133,9 +148,7 @@ Content extraction pipeline (`pipeline/` + `scripts/pipeline/`). Full workflow d
 - **Phase 3.1 — DONE** (live tracking: `src/app/actions/progress.ts` server actions, "Log this case" rating dialog + optimistic mark-for-later on /cases/[id], library Status column + working status/marked filters, `rating_count >= 3` "New" display rule; see "Tracking" section. **Phase 2 complete** — the status column subsumed 2.3)
 - **Phase 3.2 — DONE** (personal dashboard: /dashboard rebuilt on real data — stat cards, Cases-by-type + Performance-by-industry bars, Weakest ground with Practice links into the filter system, Marked-for-later list, By-difficulty strip; aggregation in `src/lib/dashboard.ts`, `relativeDate` in `src/lib/date.ts`; see "Dashboard" section. **Phase 3 complete.**)
 - **Phase 4 — DONE** (partner matching directory: /match join/edit/remove card with server-validated form, optimistic status toggle, available-first directory with click-to-reveal wa.me links; see "Matching" section)
-
-Upcoming:
-- Phase 5: casebooks/frameworks
+- **Phase 5 — DONE** (casebooks downloads + frameworks: `0004_library.sql` — `frameworks`/`materials` tables + private `library-files` bucket; `npm run upload-book` + `npm run import-frameworks` scripts; /casebooks card grid with signed PDF downloads + case counts; /frameworks grouped framework images + study-material list; `ImageCard`/`ButtonLink` extracted as shared components; see "Library" section. ⚠️ Both pages require migration 0004 to be applied. **All planned phases complete.**)
 
 ## Workflow
 

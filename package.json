@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "split": "tsx scripts/pipeline/split.mts",
-    "import": "tsx scripts/pipeline/import.mts"
+    "import": "tsx scripts/pipeline/import.mts",
+    "upload-book": "tsx scripts/pipeline/upload-book.mts",
+    "import-frameworks": "tsx scripts/pipeline/import-frameworks.mts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",
