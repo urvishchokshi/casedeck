@@ -78,6 +78,17 @@ Per-user progress on cases (Phase 3.1). Table `user_case_progress` (see Database
 - **Library**: Status column/pills — "Done" (accent Pill) and/or "Marked" (amber Pill), else "—" — from a `Map<case_id, progress>` join; same pills on mobile cards.
 - **Rating display rule**: show the average only once `rating_count >= MIN_RATINGS_TO_SHOW` (3), else "New" — everywhere, via `shownRating` in `src/lib/rating.ts` / `src/components/RatingPill.tsx`.
 
+## Dashboard
+
+/dashboard (Phase 3.2): read-only personal analytics — no writes, no new tables; server component only. Two queries in `Promise.all`: the user's `user_case_progress` rows with a `case:cases(…)` embed, plus a facet query over all cases; all aggregation happens in TypeScript in `src/lib/dashboard.ts` (pure functions, React-free).
+
+- **Scoring rule** (uniform): a row contributes to averages only when `completed && self_score !== null`; "done" counts use `completed` alone. Multi-type cases count once toward **each** of their `case_types` (Set-deduped per case).
+- **Untagged grouping**: null industry/difficulty group under the `UNTAGGED` label, always sorted/shown last. The By-difficulty strip appends an Untagged segment only when null-difficulty cases exist.
+- **Weakest ground**: ≤3 lowest-avg groupings across type + industry dimensions; a grouping needs **≥2 scored done cases** (`WEAKEST_MIN_CASES`) to qualify; card skipped entirely when nothing qualifies. Untagged is excluded (not filterable → no honest "Practice →" link). Links go to `/cases?type|industry=<enc>&status=not_done` via the URL-param filter system. Industry bars turn amber below avg 6 (`WEAK_SCORE_THRESHOLD`).
+- **Marked for later**: up to 8 (`MARKED_LIMIT`), sorted `updated_at` desc (the only timestamp on marked-only rows); "View all →" → `/cases?marked=1`.
+- Zero-done state: real-zero stat cards + one friendly CTA card, nothing else. "Last case" subtitle date = max `completed_at` via `relativeDate` in `src/lib/date.ts` (day-granularity, server-timezone).
+- `progress.ts` deliberately does **not** revalidate `/dashboard`: the page reads cookies (Supabase client) so it renders dynamically per-request. Revisit if `staleTimes` is ever tuned.
+
 ## Pipeline
 
 Content extraction pipeline (`pipeline/` + `scripts/pipeline/`). Full workflow doc: `pipeline/README.md`. Scripts run via tsx, outside the Next build. **Note:** pipeline scripts are `.mts` — the `mupdf` package is ESM-only (top-level await) and the repo has no `"type": "module"`, so `.ts` scripts would be compiled as CJS and fail to import it.
@@ -110,9 +121,9 @@ Content extraction pipeline (`pipeline/` + `scripts/pipeline/`). Full workflow d
 - **Phase 2.1.2 — DONE** (library table gains a Company column — columns now Case / Casebook / Company / Industry / Type / Difficulty / Rating / Status — plus the first working filter: a Company filter row driven by `?company=` searchParams with options derived from the data; other filter groups remain disabled placeholders for Phase 2.2. ⚠️ /cases now selects `company` explicitly, so migration 0003 must be applied)
 - **Phase 2.2 — DONE** (dynamic filter + search system for /cases; see "Case library filters" section)
 - **Phase 3.1 — DONE** (live tracking: `src/app/actions/progress.ts` server actions, "Log this case" rating dialog + optimistic mark-for-later on /cases/[id], library Status column + working status/marked filters, `rating_count >= 3` "New" display rule; see "Tracking" section. **Phase 2 complete** — the status column subsumed 2.3)
+- **Phase 3.2 — DONE** (personal dashboard: /dashboard rebuilt on real data — stat cards, Cases-by-type + Performance-by-industry bars, Weakest ground with Practice links into the filter system, Marked-for-later list, By-difficulty strip; aggregation in `src/lib/dashboard.ts`, `relativeDate` in `src/lib/date.ts`; see "Dashboard" section. **Phase 3 complete.**)
 
 Upcoming:
-- Phase 3: tracking (3.2: dashboard)
 - Phase 4: matching
 - Phase 5: casebooks/frameworks
 
