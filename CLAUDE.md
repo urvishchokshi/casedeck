@@ -44,11 +44,11 @@ Microsoft (Azure) OAuth via Supabase Auth, restricted to `@isb.edu` accounts.
 
 ## Database
 
-Schema lives in `supabase/migrations/0001_init.sql` (applied manually in the Supabase SQL editor). TypeScript mirrors in `src/lib/types.ts`; clients in `src/lib/supabase/` (`client.ts` browser, `server.ts` cookie-based SSR).
+Schema lives in `supabase/migrations/` (`0001_init.sql` base, `0002_pipeline_tags.sql` pipeline tag columns; applied manually in the Supabase SQL editor). TypeScript mirrors in `src/lib/types.ts`; clients in `src/lib/supabase/` (`client.ts` browser, `server.ts` cookie-based SSR).
 
 - `profiles` — one row per user, auto-created by a trigger on `auth.users` insert; `is_admin` is protected by column-level grants (users can only update `full_name`/`campus`)
 - `casebooks` — one per IIM casebook (`slug` unique, optional `pdf_url` for downloads)
-- `cases` — case content: transcript jsonb, solution/exhibit image URLs, filters (industry, case_type, difficulty), rating aggregates (`avg_rating`, `rating_count` maintained by trigger). **Idempotency key: `UNIQUE (casebook_id, source_file)`** — re-imports overwrite in place
+- `cases` — case content: `prompt`, transcript jsonb (`[{speaker: "interviewer"|"candidate", text}]` turns), solution/exhibit image columns (hold **storage paths**, not URLs), dynamic tags (`case_types`/`extra_tags` `text[]` with GIN indexes, `tags_inferred`), nullable `industry`/`difficulty`, `source_start_page` + `printed_pages`, rating aggregates (`avg_rating`, `rating_count` maintained by trigger). **Idempotency key: `UNIQUE (casebook_id, source_start_page)`** — re-imports overwrite in place
 - `user_case_progress` — per-user per-case: completed, marked_for_later, self_score (1–10), quality_rating (1–5); `UNIQUE (user_id, case_id)`
 - `match_profiles` — partner-matching profile, one row per user (PK = user_id)
 - Enums: `difficulty_level`, `partner_status`, `mode_pref`, `campus_type`
@@ -69,14 +69,15 @@ Content extraction pipeline (`pipeline/` + `scripts/pipeline/`). Full workflow d
 - **Plan schema** (`plans/<slug>.json`, produced by the `prompts/split-plan.md` chat): `{ printed_page_offset, cases: [{ index, title, start, end }] }` — `start`/`end` are 1-based PDF pages, inclusive. Overlapping ranges are errors; gaps are warnings (divider pages).
 - **Manifest schema** (`chunks/<slug>/manifest.json`): `{ slug, printed_page_offset, chunks: [{ file, start_page, end_page, case_indices, case_titles }] }`.
 - **Dynamic-tag policy** (in `prompts/extraction.md`): tags come **verbatim from the book's slide header line** — never normalized to a predefined list. First header segment → `case_types` (split on "&"/"/"/"+"/"and" into an array), second → `industry`, difficulty word → nearest of Easy/Medium/Hard, rest → `extra_tags`. Missing header → fields are inferred (reusing labels seen elsewhere in the book) and flagged `tags_inferred: true`.
-- **Chunk workflow**: register book in `books.json` + drop PDF in `source/` → claude.ai chat with `prompts/split-plan.md` + ToC pages produces `plans/<slug>.json` (chat asks for one calibration fact: the PDF page of the first case) → `npm run split -- --book <slug>` validates the plan and writes `chunks/<slug>/chunk-NN_pAAA-pBBB.pdf` (~8 cases each), `manifest.json`, and `_smoke-test.png` (chunk-01 page 1 at 2x, proving the mupdf render path) → per chunk: claude.ai Project (instructions = `prompts/extraction.md`), attach chunk, save JSON array to `inbox/<slug>/` → import script (next phase) consumes inbox + manifest.
-- The import script (next prompt) will bring a migration changing `cases` to `text[]` tag columns (multi-type cases, dynamic labels). That migration must also reconcile the extraction schema with `cases`: add a `prompt` column, align transcript shape (extraction emits `{speaker, text}` vs current `TranscriptSection {heading, content}` in `src/lib/types.ts`), and relax `industry`/`difficulty` NOT NULL (extraction permits nulls for undeterminable fields).
+- **Chunk workflow**: register book in `books.json` + drop PDF in `source/` → claude.ai chat with `prompts/split-plan.md` + ToC pages produces `plans/<slug>.json` (chat asks for one calibration fact: the PDF page of the first case) → `npm run split -- --book <slug>` validates the plan and writes `chunks/<slug>/chunk-NN_pAAA-pBBB.pdf` (~8 cases each), `manifest.json`, and `_smoke-test.png` (chunk-01 page 1 at 2x, proving the mupdf render path) → per chunk: claude.ai Project (instructions = `prompts/extraction.md`), attach chunk, save JSON array to `inbox/<slug>/` → `npm run import -- --book <slug>`.
+- **Import** (`scripts/pipeline/import.mts`, loads `.env.local` itself for the service-role key): zod-validates every inbox JSON array (code fences stripped; extraction `error` objects and invalid cases go to a skip report, never abort the run; duplicate first-printed-page across files → last wins), renders each needed solution/exhibit page from the **source** PDF at 2x via mupdf (once per unique page), uploads to the private `case-images` bucket at `<slug>/p<printed>.png` (`upsert: true`), and upserts `casebooks` (by slug) + `cases` on **`(casebook_id, source_start_page)`** — `source_start_page` = first printed page. The DB stores **storage paths** in `solution_image_urls`/`exhibit_image_urls`; mint signed URLs at read time. Re-runs are idempotent; inbox files can be kept or deleted.
 
 ## Commands
 
 - `npm run dev` — local dev server
 - `npm run build` — production build (must pass with zero errors)
 - `npm run split -- --book <slug> [--chunk-size 8]` — split a casebook PDF into chunk PDFs per its plan
+- `npm run import -- --book <slug>` — validate inbox extraction JSON, render/upload page images, upsert casebook + cases
 
 ## Status
 
@@ -85,9 +86,9 @@ Content extraction pipeline (`pipeline/` + `scripts/pipeline/`). Full workflow d
 - **Theme: Casedeck design system — DONE** (rename CasePrep → Casedeck, new tokens/fonts, full reskin of shell + all placeholder pages)
 - **Phase 0.3: Microsoft auth + isb.edu enforcement — DONE** (Azure OAuth, callback with admin cleanup, proxy session refresh + route protection, real user footer with sign-out). **Phase 0 complete.**
 - **Phase 1.1 — DONE** (content pipeline part 1: pipeline/ scaffolding, `npm run split` chunking script with plan validation + mupdf smoke-test render, split-plan + extraction claude.ai prompts)
+- **Phase 1.2 — DONE** (content pipeline part 2: `0002_pipeline_tags.sql` — text[] tags, nullable industry/difficulty, `prompt`, `(casebook_id, source_start_page)` idempotency key; `npm run import` script: inbox validation + skip report, mupdf page rendering, storage uploads, casebook/case upserts). **Phase 1 complete.**
 
 Upcoming:
-- Phase 1: content pipeline (next: 1.2 import script + text[] tags migration)
 - Phase 2: case library
 - Phase 3: tracking
 - Phase 4: matching

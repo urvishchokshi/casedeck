@@ -1,4 +1,4 @@
-// TypeScript mirrors of the database schema (supabase/migrations/0001_init.sql).
+// TypeScript mirrors of the database schema (supabase/migrations/).
 // Single source of truth for row shapes across the app.
 
 export type DifficultyLevel = "Easy" | "Medium" | "Hard";
@@ -24,20 +24,27 @@ export interface Casebook {
   created_at: string;
 }
 
-export interface TranscriptSection {
-  heading: string;
-  content: string;
+export interface TranscriptTurn {
+  speaker: "interviewer" | "candidate";
+  text: string;
 }
 
 export interface Case {
   id: string;
   casebook_id: string;
-  source_file: string;
   title: string;
-  industry: string;
-  case_type: string;
-  difficulty: DifficultyLevel;
-  transcript: TranscriptSection[];
+  case_types: string[];
+  industry: string | null;
+  difficulty: DifficultyLevel | null;
+  extra_tags: string[];
+  tags_inferred: boolean;
+  prompt: string | null;
+  transcript: TranscriptTurn[];
+  /** First printed page of the case; with casebook_id, the import idempotency key. */
+  source_start_page: number;
+  /** All printed (slide-footer) page numbers the case spans. */
+  printed_pages: number[];
+  /** Ordered storage paths in the private case-images bucket (e.g. "iim-a/p40.png") — sign at read time. */
   solution_image_urls: string[];
   exhibit_image_urls: string[];
   avg_rating: number | null;
