@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, Instrument_Serif, Plus_Jakarta_Sans } from "next/font/google";
+import { siteOrigin } from "@/lib/site-url";
 import "./globals.css";
 
 const display = Instrument_Serif({
@@ -22,8 +23,18 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Casedeck",
-  description: "Case interview preparation for ISB placements",
+  metadataBase: new URL(siteOrigin()),
+  title: { default: "Casedeck", template: "%s · Casedeck" },
+  description:
+    "Case interview prep for ISB placements — case library, progress tracking, partner matching, and casebook downloads.",
+  openGraph: {
+    title: "Casedeck",
+    description: "Case interview prep for ISB placements.",
+    siteName: "Casedeck",
+    type: "website",
+  },
+  // Private ISB-only tool — keep it out of search indexes.
+  robots: { index: false, follow: false },
 };
 
 export default function RootLayout({

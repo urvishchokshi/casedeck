@@ -6,6 +6,8 @@ import type { MatchProfile, ModePref, Profile } from "@/lib/types";
 import { MyMatchCard } from "./MyMatchCard";
 import { RevealWhatsApp } from "./RevealWhatsApp";
 
+export const metadata = { title: "Partner matching" };
+
 interface MatchRow extends MatchProfile {
   profile: Pick<Profile, "full_name" | "email">;
 }
@@ -87,7 +89,8 @@ export default async function MatchPage() {
 }
 
 function stripEmbed(row: MatchRow): MatchProfile {
-  const { profile: _profile, ...rest } = row;
+  const { profile, ...rest } = row;
+  void profile;
   return rest;
 }
 

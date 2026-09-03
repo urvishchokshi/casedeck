@@ -66,7 +66,9 @@ function UserSection({ user }: { user: ShellUser }) {
     setSigningOut(true);
     const supabase = createClient();
     await supabase.auth.signOut();
-    // Full navigation so all server components re-render unauthenticated.
+    // Full navigation (not router.push) so every server component re-renders
+    // unauthenticated and client state is dropped.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.assign("/login");
   };
 

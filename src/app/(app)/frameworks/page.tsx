@@ -9,6 +9,8 @@ import type { Framework, Material } from "@/lib/types";
 
 type FrameworkRow = Framework & { casebook: { name: string } | null };
 
+export const metadata = { title: "Frameworks" };
+
 const SIGNED_URL_TTL_SECONDS = 60 * 60;
 
 export default async function FrameworksPage() {

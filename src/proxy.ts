@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import type { User } from "@supabase/supabase-js";
 import { isIsbEmail } from "@/lib/auth";
 
-const PUBLIC_PATHS = ["/login", "/auth/callback"];
+const PUBLIC_PATHS = ["/login", "/auth/callback", "/api/health"];
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some(
@@ -35,10 +36,19 @@ export async function proxy(request: NextRequest) {
   );
 
   // getUser() validates the JWT against Supabase (unlike getSession) and
-  // refreshes an expired session as a side effect.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // refreshes an expired session as a side effect. Fail closed if the auth
+  // server is unreachable: treat the request as unauthenticated rather than
+  // throwing a 500 on every route.
+  let user: User | null = null;
+  try {
+    ({
+      data: { user },
+    } = await supabase.auth.getUser());
+  } catch (e) {
+    console.error(
+      `proxy getUser failed: ${e instanceof Error ? e.message.slice(0, 200) : "unknown error"}`
+    );
+  }
 
   const { pathname } = request.nextUrl;
 
@@ -57,7 +67,14 @@ export async function proxy(request: NextRequest) {
   // Enforcement layer 2: a valid session with a non-ISB email is never
   // allowed through (the callback should already have deleted the user).
   if (user && !isIsbEmail(user.email)) {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      // Still bounce them — a failed sign-out must not 500 the request.
+      console.error(
+        `proxy signOut failed: ${e instanceof Error ? e.message.slice(0, 200) : "unknown error"}`
+      );
+    }
     return redirectTo("/login", "?error=domain");
   }
 

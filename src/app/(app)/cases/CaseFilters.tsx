@@ -72,8 +72,11 @@ export function CaseSearchControls({ filters }: { filters: CaseFilterState }) {
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   // The debounced push reads the latest props through this ref, so a chip
   // toggled in the sibling component during the 300ms window isn't undone.
+  // Updated in an effect (post-commit) — always ahead of the ≥300ms timer.
   const filtersRef = useRef(filters);
-  filtersRef.current = filters;
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
   // Tracks the last q this component pushed, so the resync effect below only
   // overwrites the input on external changes (back/forward, shared URL).
   const lastPushed = useRef(filters.q);

@@ -16,6 +16,8 @@ import {
   type ProgressWithCase,
 } from "@/lib/dashboard";
 
+export const metadata = { title: "Dashboard" };
+
 function StatCard({
   label,
   value,

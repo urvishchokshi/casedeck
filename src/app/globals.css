@@ -74,3 +74,30 @@ a:focus-visible {
 ::selection {
   background: var(--accent-200);
 }
+
+/* Loading skeletons (src/components/ui/Skeleton.tsx) — shimmer built from
+   theme tokens; override the radius per-use (rounded-full for pills etc.). */
+.skeleton {
+  border-radius: var(--rs);
+  background: linear-gradient(
+    100deg,
+    var(--chip) 40%,
+    var(--thead) 50%,
+    var(--chip) 60%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+    background: var(--chip);
+  }
+}

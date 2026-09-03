@@ -12,6 +12,22 @@ type CaseDetailRow = Case & { casebook: { name: string } | null };
 
 const SIGNED_URL_TTL_SECONDS = 60 * 60;
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const supabase = await createClient();
+  // Errors (including invalid-uuid 22P02) just leave data null → fallback.
+  const { data } = await supabase
+    .from("cases")
+    .select("title")
+    .eq("id", id)
+    .maybeSingle<Pick<Case, "title">>();
+  return { title: data?.title ?? "Case" };
+}
+
 export default async function CaseDetailPage({
   params,
 }: {

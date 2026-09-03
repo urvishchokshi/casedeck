@@ -3,7 +3,7 @@ import { Brand } from "@/components/Brand";
 import { SignInButton } from "./SignInButton";
 
 export const metadata: Metadata = {
-  title: "Sign in — Casedeck",
+  title: "Sign in",
 };
 
 const errorMessages: Record<string, string> = {

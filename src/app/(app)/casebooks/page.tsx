@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/Card";
 import { createClient } from "@/lib/supabase/server";
 import type { Casebook } from "@/lib/types";
 
+export const metadata = { title: "Casebooks" };
+
 const SIGNED_URL_TTL_SECONDS = 60 * 60;
 
 export default async function CasebooksPage() {

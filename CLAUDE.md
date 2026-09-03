@@ -16,8 +16,8 @@ Casedeck (formerly CasePrep) — case interview prep platform for ISB students. 
 
 ## Conventions
 
-- All colors/radii/shadows come from CSS variables in `src/app/globals.css` — **NEVER hardcode hex values in components**. Consume tokens via Tailwind arbitrary values, e.g. `bg-[var(--card)]`. Font sizes are px literals matching the design (e.g. `text-[13.5px]`).
-- Shared UI primitives live in `src/components/ui/` (Button, Card, Pill, Collapsible); other shared components in `src/components/`.
+- All colors/radii/shadows come from CSS variables in `src/app/globals.css` — **NEVER hardcode hex values in components**. Consume tokens via Tailwind arbitrary values, e.g. `bg-[var(--card)]`. Font sizes are px literals matching the design (e.g. `text-[13.5px]`). Sole exception: `src/app/icon.svg` (static asset, CSS vars unavailable) carries hex literals mirroring the Brand mark.
+- Shared UI primitives live in `src/components/ui/` (Button, Card, Pill, Collapsible, Skeleton); other shared components in `src/components/`.
 - Everything strictly typed. No `any`.
 - Server components by default; add `"use client"` only where interactivity requires it.
 
@@ -33,13 +33,16 @@ Casedeck (formerly CasePrep) — case interview prep platform for ISB students. 
 
 Microsoft (Azure) OAuth via Supabase Auth, restricted to `@isb.edu` accounts.
 
-- **Flow**: `/login` → `SignInButton` (browser client, `signInWithOAuth({ provider: 'azure' })`, redirectTo `/auth/callback`) → `src/app/auth/callback/route.ts` exchanges the code for a session → redirect to `/cases`.
+- **Flow**: `/login` → `SignInButton` (browser client, `signInWithOAuth({ provider: 'azure' })`, redirectTo `/auth/callback` off `window.location.origin`) → `src/app/auth/callback/route.ts` exchanges the code for a session → redirect to `/cases`.
+- **Origin rule**: server-side redirect origins come from `siteOrigin()` in `src/lib/site-url.ts` — `NEXT_PUBLIC_SITE_URL` (set it in Vercel for production, no trailing slash) → request origin → `VERCEL_URL` → localhost. Also feeds `metadataBase`.
+- **Callback hardening** (Phase 6.1): whole handler wrapped in try/catch → `/login?error=auth` (never a raw 500); provider `error_description` logs truncated to 200 chars; if `SUPABASE_SERVICE_ROLE_KEY` is unset the non-ISB deletion is skipped with a logged warning instead of throwing — ⚠️ that's an enforcement gap, not just lost cleanup (the proxy only guards the Next app; an undeleted auth user can hit the Supabase API directly with the anon key), so the key is required in production.
 - **Two-layer @isb.edu enforcement, server-side only** (`isIsbEmail` in `src/lib/auth.ts`):
   1. Callback: non-ISB email → the auth user is deleted via the service-role admin client (`src/lib/supabase/admin.ts`, guarded by `import "server-only"` — never import it into client code), session dropped, redirect `/login?error=domain`.
   2. Proxy: every request re-validates with `getUser()` (never `getSession`); a session with a non-ISB email is signed out and bounced. `(app)/layout.tsx` repeats both checks as belt-and-braces.
   - ⚠️ The Azure provider is **multi-tenant**, so the gate rests on the Azure `email` claim; a hostile tenant could self-assert an @isb.edu email. Locking the Azure app registration to the ISB tenant (or verifying tenant id) is the real fix — revisit before launch.
-- **Route protection**: `src/proxy.ts` (Next 16 renamed middleware → proxy). Runs on everything except `_next` assets and dotted files; refreshes the session per the @supabase/ssr cookie pattern (cookies are copied onto redirect responses). Unauthenticated → `/login`; authenticated visiting `/login` → `/cases`.
-- **Adding a public route**: add its path to `PUBLIC_PATHS` in `src/proxy.ts` (exact or prefix match).
+- **Service-role key rule**: `SUPABASE_SERVICE_ROLE_KEY` is read ONLY by `scripts/pipeline/*.mts` and `src/lib/supabase/admin.ts` (the sanctioned, `server-only`-guarded exception above). Nothing else under `src/` may touch it.
+- **Route protection**: `src/proxy.ts` (Next 16 renamed middleware → proxy). Runs on everything except `_next` assets and dotted files; refreshes the session per the @supabase/ssr cookie pattern (cookies are copied onto redirect responses). Unauthenticated → `/login`; authenticated visiting `/login` → `/cases`. `getUser()` is wrapped in try/catch and **fails closed** — an auth-server outage yields login redirects, not 500s.
+- **Adding a public route**: add its path to `PUBLIC_PATHS` in `src/proxy.ts` (exact or prefix match). Current entries: `/login`, `/auth/callback`, `/api/health`.
 - `/login?error=domain|auth` drives the error banner on the login page.
 
 ## Database
@@ -110,6 +113,17 @@ Per-user progress on cases (Phase 3.1). Table `user_case_progress` (see Database
 - **Adding study materials (Studio path — no script)**: upload the PDF to the `library-files` bucket via Dashboard → Storage, then insert a `materials` row (title, description, `file_path` = the storage path, sort_order) via Table editor/SQL. No app write path by design.
 - Shared bits extracted in Phase 5: `src/components/ImageCard.tsx` (was local to `/cases/[id]` — crisp full-width render card with click-to-open + "Image unavailable" fallback) and `src/components/ui/ButtonLink.tsx` (plain `<a>` reusing Button's exported class constants, for signed-URL hrefs).
 
+## Production hardening
+
+Phase 6.1 surface — deploy requirements and app-shell chrome.
+
+- **Deploy requirements (Vercel)**: env vars `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and `NEXT_PUBLIC_SITE_URL` (canonical production URL, no trailing slash — required; previews fall back to `VERCEL_URL`). Supabase Auth URL config + Azure redirect URI checklist lives in README's "Production deploy" section.
+- **Security headers** (`next.config.ts` `headers()`, all routes): X-Frame-Options DENY, X-Content-Type-Options nosniff, Referrer-Policy strict-origin-when-cross-origin, conservative Permissions-Policy; `poweredByHeader: false`. HSTS deliberately NOT set (Vercel serves it); CSP deliberately deferred (needs nonce plumbing for Next's inline scripts).
+- **Health**: `GET /api/health` → `{ ok: true }`, unauthenticated (in proxy `PUBLIC_PATHS`) — for uptime checks.
+- **Metadata**: root layout sets `metadataBase` (via `siteOrigin()`), `title.template` `"%s · Casedeck"`, text-only OG tags, and `robots: noindex` (private ISB tool). Each page exports a bare `{ title }`; `/cases/[id]` uses `generateMetadata` (title-only query, fallback "Case"). Favicon: `src/app/icon.svg` + generated `favicon.ico` (both the Brand "C" mark).
+- **Error surfaces**: root `not-found.tsx` (catches unmatched URLs + `notFound()`, shell-less, Brand + link to /cases); `(app)/error.tsx` (inside the sidebar shell) and root `error.tsx` (shell-less safety net) — both client components using the Next 16.3 `retry()` prop, never rendering `error.message` (digest only).
+- **Loading skeletons**: per-segment `loading.tsx` for /cases, /cases/[id], /dashboard, /match — built from `Skeleton` (`src/components/ui/Skeleton.tsx`) + the `.skeleton` shimmer class in globals.css (token gradient, `prefers-reduced-motion` → static fill). Per-segment because auth blocks in `(app)/layout.tsx`.
+
 ## Pipeline
 
 Content extraction pipeline (`pipeline/` + `scripts/pipeline/`). Full workflow doc: `pipeline/README.md`. Scripts run via tsx, outside the Next build. **Note:** pipeline scripts are `.mts` — the `mupdf` package is ESM-only (top-level await) and the repo has no `"type": "module"`, so `.ts` scripts would be compiled as CJS and fail to import it.
@@ -149,6 +163,7 @@ Content extraction pipeline (`pipeline/` + `scripts/pipeline/`). Full workflow d
 - **Phase 3.2 — DONE** (personal dashboard: /dashboard rebuilt on real data — stat cards, Cases-by-type + Performance-by-industry bars, Weakest ground with Practice links into the filter system, Marked-for-later list, By-difficulty strip; aggregation in `src/lib/dashboard.ts`, `relativeDate` in `src/lib/date.ts`; see "Dashboard" section. **Phase 3 complete.**)
 - **Phase 4 — DONE** (partner matching directory: /match join/edit/remove card with server-validated form, optimistic status toggle, available-first directory with click-to-reveal wa.me links; see "Matching" section)
 - **Phase 5 — DONE** (casebooks downloads + frameworks: `0004_library.sql` — `frameworks`/`materials` tables + private `library-files` bucket; `npm run upload-book` + `npm run import-frameworks` scripts; /casebooks card grid with signed PDF downloads + case counts; /frameworks grouped framework images + study-material list; `ImageCard`/`ButtonLink` extracted as shared components; see "Library" section. ⚠️ Both pages require migration 0004 to be applied. **All planned phases complete.**)
+- **Phase 6.1 — DONE** (production hardening: `siteOrigin()` helper + callback try/catch/degraded-admin path, proxy fail-closed getUser + `/api/health` public route, security headers in `next.config.ts`, full metadata (template titles, OG, noindex) + branded icon.svg/favicon.ico, themed root not-found/error + `(app)/error`, shimmer `loading.tsx` skeletons ×4 via new `Skeleton` primitive, `.env.example` + README production-deploy checklist; see "Production hardening" section)
 
 ## Workflow
 

@@ -16,6 +16,8 @@ import {
   type ChipGroup,
 } from "./CaseFilters";
 
+export const metadata = { title: "Case library" };
+
 interface CaseListRow {
   id: string;
   title: string;
