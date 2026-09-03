@@ -89,6 +89,16 @@ Per-user progress on cases (Phase 3.1). Table `user_case_progress` (see Database
 - Zero-done state: real-zero stat cards + one friendly CTA card, nothing else. "Last case" subtitle date = max `completed_at` via `relativeDate` in `src/lib/date.ts` (day-granularity, server-timezone).
 - `progress.ts` deliberately does **not** revalidate `/dashboard`: the page reads cookies (Supabase client) so it renders dynamically per-request. Revisit if `staleTimes` is ever tuned.
 
+## Matching
+
+/match partner directory (Phase 4). Table `match_profiles` (see Database); no schema changes, **no filters on this page — deliberate**, it's a browsable directory. `updated_at` is owned by the `set_match_profiles_updated_at` trigger — never written from app code.
+
+- **Server actions** (`src/app/actions/match.ts`, mirrors the `progress.ts` contract — session-derived user, `{ ok } | { ok: false, error }`, generic DB error messages, revalidate `/match` on success only): `upsertMatchProfile` (whatsapp normalized by stripping spaces/dashes then `^\+?\d{8,15}$`, stored normalized; function/industry trimmed non-empty ≤60 chars; campus/mode/status checked against `as const` enum arrays; upsert `onConflict: "user_id"`), `setStatus` (quick toggle; `.update().select()` so a 0-row update — card removed in another tab — reports failure), `deleteMatchProfile` (real delete; RLS has an owner delete policy, unlike `user_case_progress`).
+- **Page** (`src/app/(app)/match/page.tsx`, server): one query with a `profile:profiles!inner(full_name, email)` embed (readable — profiles is select-all to authenticated), ordered `updated_at` desc; JS splits self vs others and stable-sorts others available-before-busy (keeps newest-first within each group without relying on SQL enum order). Display name = `full_name` fallback email prefix; `initialsOf` duplicated from `(app)/layout.tsx` (non-exported there).
+- **Own-state block** (`MyMatchCard.tsx`, client): no row → "Join the board" card + inline form (Add my card; campus starts unchosen, mode/status default both/available matching DB defaults); has row → compact "Your card" bar with optimistic Available/Busy segmented toggle (`useOptimistic` set inside the transition, disabled while pending; busy-selected = amber-50), "Edit" (inline form swap, pre-filled — not a dialog) and "Remove my card" (confirm dialog cloning the `LogCaseDialog` chrome → `deleteMatchProfile`). Whatsapp input stays free-form; normalization is server-side.
+- **Directory cards**: amber initials avatar, campus + mode pills, status dot + label — busy uses `--amber` (deliberate departure from the placeholder's `--status-idle`), available `--status-active`.
+- **Reveal model (honest note)**: every signed-in user's server-rendered payload contains **all** WhatsApp numbers — `RevealWhatsApp.tsx` ("Show WhatsApp" → `wa.me/<digits>` "Open WhatsApp" link, digits-only, `+` stripped) is client-side UX friction, **not a security boundary**. Accepted because the page is authenticated ISB-only and numbers are shared consensually by joining; a real boundary would need an RPC/column-split + policy change.
+
 ## Pipeline
 
 Content extraction pipeline (`pipeline/` + `scripts/pipeline/`). Full workflow doc: `pipeline/README.md`. Scripts run via tsx, outside the Next build. **Note:** pipeline scripts are `.mts` — the `mupdf` package is ESM-only (top-level await) and the repo has no `"type": "module"`, so `.ts` scripts would be compiled as CJS and fail to import it.
@@ -122,9 +132,9 @@ Content extraction pipeline (`pipeline/` + `scripts/pipeline/`). Full workflow d
 - **Phase 2.2 — DONE** (dynamic filter + search system for /cases; see "Case library filters" section)
 - **Phase 3.1 — DONE** (live tracking: `src/app/actions/progress.ts` server actions, "Log this case" rating dialog + optimistic mark-for-later on /cases/[id], library Status column + working status/marked filters, `rating_count >= 3` "New" display rule; see "Tracking" section. **Phase 2 complete** — the status column subsumed 2.3)
 - **Phase 3.2 — DONE** (personal dashboard: /dashboard rebuilt on real data — stat cards, Cases-by-type + Performance-by-industry bars, Weakest ground with Practice links into the filter system, Marked-for-later list, By-difficulty strip; aggregation in `src/lib/dashboard.ts`, `relativeDate` in `src/lib/date.ts`; see "Dashboard" section. **Phase 3 complete.**)
+- **Phase 4 — DONE** (partner matching directory: /match join/edit/remove card with server-validated form, optimistic status toggle, available-first directory with click-to-reveal wa.me links; see "Matching" section)
 
 Upcoming:
-- Phase 4: matching
 - Phase 5: casebooks/frameworks
 
 ## Workflow
