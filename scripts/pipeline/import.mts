@@ -44,6 +44,8 @@ const ExtractedCaseSchema = z.object({
   case_types: z.array(z.string()),
   industry: z.string().nullable(),
   difficulty: z.enum(["Easy", "Medium", "Hard"]).nullable(),
+  // Optional so pre-0003 inbox JSONs (no company field) still import cleanly.
+  company: z.string().nullable().default(null),
   extra_tags: z.array(z.string()),
   tags_inferred: z.boolean(),
   prompt: z.string().nullable(),
@@ -353,6 +355,7 @@ async function main(): Promise<void> {
       case_types: c.data.case_types,
       industry: c.data.industry,
       difficulty: c.data.difficulty,
+      company: c.data.company,
       extra_tags: c.data.extra_tags,
       tags_inferred: c.data.tags_inferred,
       prompt: c.data.prompt,

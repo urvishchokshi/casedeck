@@ -21,7 +21,7 @@ interface CaseListRow {
   id: string;
   title: string;
   case_types: string[];
-  extra_tags: string[];
+  industry: string | null;
   difficulty: DifficultyLevel | null;
   avg_rating: number | null;
   rating_count: number;
@@ -33,11 +33,6 @@ const thClasses =
   "border-b border-[var(--line)] px-3 py-[11px] text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--muted)] first:pl-4 last:pr-4";
 const tdClasses =
   "border-b border-[var(--line-soft)] px-3 py-2.5 text-[13px] first:pl-4 last:pr-4";
-
-/** Extra tags are shown only when the tag row stays short; otherwise omitted. */
-function visibleExtraTags(c: CaseListRow): string[] {
-  return c.case_types.length + c.extra_tags.length <= 3 ? c.extra_tags : [];
-}
 
 function Rating({ c }: { c: CaseListRow }) {
   return c.rating_count > 0 && c.avg_rating !== null ? (
@@ -54,7 +49,7 @@ export default async function CasesPage() {
   const { data, error } = await supabase
     .from("cases")
     .select(
-      "id, title, case_types, extra_tags, difficulty, avg_rating, rating_count, source_start_page, casebook:casebooks(name)"
+      "id, title, case_types, industry, difficulty, avg_rating, rating_count, source_start_page, casebook:casebooks(name)"
     )
     // Deterministic server-side order so the PostgREST row cap can never drop
     // an arbitrary subset; display order (by casebook name) is applied below.
@@ -144,6 +139,7 @@ export default async function CasesPage() {
                 <tr className="bg-[var(--thead)]">
                   <th className={`${thClasses} w-[34%]`}>Case</th>
                   <th className={thClasses}>Casebook</th>
+                  <th className={thClasses}>Industry</th>
                   <th className={thClasses}>Type</th>
                   <th className={thClasses}>Difficulty</th>
                   <th className={thClasses}>Rating</th>
@@ -165,7 +161,7 @@ export default async function CasesPage() {
                           {c.title}
                         </span>
                         <span className="block font-[family-name:var(--font-mono)] text-[12px] text-[var(--muted)]">
-                          {c.casebook?.name ?? "—"} · p. {c.source_start_page}
+                          p. {c.source_start_page}
                         </span>
                       </Link>
                     </td>
@@ -173,14 +169,18 @@ export default async function CasesPage() {
                       {c.casebook?.name ?? "—"}
                     </td>
                     <td className={tdClasses}>
+                      {c.industry ? (
+                        <Pill>{c.industry}</Pill>
+                      ) : (
+                        <span className="text-[var(--muted)]">—</span>
+                      )}
+                    </td>
+                    <td className={tdClasses}>
                       <span className="flex flex-wrap gap-1.5">
                         {c.case_types.map((t, i) => (
                           <Pill key={`type-${t}-${i}`} tone="accent">
                             {t}
                           </Pill>
-                        ))}
-                        {visibleExtraTags(c).map((t, i) => (
-                          <Pill key={`extra-${t}-${i}`}>{t}</Pill>
                         ))}
                       </span>
                     </td>

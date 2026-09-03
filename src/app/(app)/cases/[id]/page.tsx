@@ -104,6 +104,7 @@ export default async function CaseDetailPage({
               </Pill>
             ))}
             {c.industry && <Pill>{c.industry}</Pill>}
+            {c.company && <Pill>{c.company}</Pill>}
             {c.difficulty && <Pill>{c.difficulty}</Pill>}
             {c.rating_count > 0 && c.avg_rating !== null ? (
               <Pill tone="amber">★ {c.avg_rating.toFixed(1)}</Pill>
@@ -113,6 +114,11 @@ export default async function CaseDetailPage({
             {c.tags_inferred && (
               <Pill className="text-[var(--muted)]">tags inferred</Pill>
             )}
+            {c.extra_tags.map((t, i) => (
+              <Pill key={`extra-${t}-${i}`} className="text-[var(--muted)]">
+                {t}
+              </Pill>
+            ))}
           </div>
         </div>
         <div className="flex flex-none gap-2">

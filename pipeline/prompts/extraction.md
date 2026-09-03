@@ -17,6 +17,7 @@ Identify **every distinct case** in the attached chunk. Return ONE JSON array wi
   "case_types": [<one or more type labels>],
   "industry": "<industry label>" | null,
   "difficulty": "Easy" | "Medium" | "Hard" | null,
+  "company": "<the consulting firm this case is attributed to, if the case states one>" | null,
   "extra_tags": [<remaining header segments, verbatim, else []>],
   "tags_inferred": false | true,
   "prompt": "<the opening problem statement given to the candidate>",
@@ -39,6 +40,8 @@ Most slides carry a header tag line such as `Profitability | Food & Beverage (Fo
 - The difficulty word → map to the closest of `Easy` / `Medium` / `Hard` (e.g. "Moderate" → `Medium`, "Difficult"/"Challenging" → `Hard`).
 - Any remaining segments → `extra_tags`, verbatim.
 - Set `"tags_inferred": false`.
+
+**Consulting firm attribution:** header segments or the case text often name the consulting firm the case comes from (e.g. a firm name like McKinsey, BCG, Bain, LEK, Kearney — judge by context, do not rely on a fixed list). When a segment is a consulting firm attribution, put it in `"company"` (verbatim, trimmed) and NOT in `extra_tags`. All other leftover segments still go to `extra_tags` verbatim. If no firm is stated, `"company"` is `null` — do not infer a firm.
 
 **If the header line is missing or partial:** infer the missing fields from the case content. When inferring, REUSE labels already seen elsewhere in this casebook/chunk where they fit, rather than coining new phrasings. Set `"tags_inferred": true`.
 
@@ -65,6 +68,7 @@ Most slides carry a header tag line such as `Profitability | Food & Beverage (Fo
     "case_types": ["Profitability", "Cost Reduction"],
     "industry": "Food & Beverage (Food Processing)",
     "difficulty": "Easy",
+    "company": "Bain",
     "extra_tags": ["Guesstimate Elements"],
     "tags_inferred": false,
     "prompt": "Your client is a mid-sized dairy processor in Gujarat whose EBITDA margin has fallen from 14% to 9% over two years. The CEO wants to know why, and what to do about it.",
@@ -87,6 +91,7 @@ Most slides carry a header tag line such as `Profitability | Food & Beverage (Fo
     "case_types": ["Operations"],
     "industry": "Aviation",
     "difficulty": "Medium",
+    "company": null,
     "extra_tags": [],
     "tags_inferred": true,
     "prompt": "Your client is a low-cost Indian airline whose on-time performance has slipped below the industry average. The COO has asked you to diagnose the problem.",
@@ -106,4 +111,4 @@ Most slides carry a header tag line such as `Profitability | Food & Beverage (Fo
 ]
 ```
 
-(The first case had a header tag line — segments copied verbatim, `tags_inferred: false`. The second case had no header — labels inferred from content, reusing phrasings seen in the book, `tags_inferred: true`.)
+(The first case had a header tag line — segments copied verbatim, `tags_inferred: false`, and its "Bain" segment went to `company` rather than `extra_tags`. The second case had no header — labels inferred from content, reusing phrasings seen in the book, `tags_inferred: true`, and since no firm was stated, `company` is `null`.)

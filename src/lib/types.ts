@@ -36,6 +36,8 @@ export interface Case {
   case_types: string[];
   industry: string | null;
   difficulty: DifficultyLevel | null;
+  /** Consulting firm the case is attributed to, verbatim; null when unstated. */
+  company: string | null;
   extra_tags: string[];
   tags_inferred: boolean;
   prompt: string | null;
