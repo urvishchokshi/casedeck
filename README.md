@@ -41,9 +41,11 @@ Checklist for a fresh production deployment:
 2. **Supabase → Authentication → URL Configuration**
    - Site URL = the production URL
    - Redirect URLs must include `https://<domain>/auth/callback` (keep `http://localhost:3000/auth/callback` for local dev)
-3. **Azure app registration**
+3. **Azure app registration + tenant lock** (⚠️ required before a wide launch)
    - Redirect URI = `https://<project-ref>.supabase.co/auth/v1/callback`
-   - ⚠️ The registration is currently **multi-tenant**, so the `@isb.edu` gate rests on the Azure `email` claim; lock the registration to the ISB tenant (or verify tenant id) before a wide launch.
+   - Keep the registration **multi-tenant** ("Accounts in any organizational directory", no personal accounts) — the registration lives outside ISB's tenant, so single-tenant would lock ISB users out.
+   - The tenant lock happens in **Supabase → Authentication → Providers → Azure**: set the Azure Tenant URL to `https://login.microsoftonline.com/a4dae443-38ab-404a-b331-9d1d337fcf37` (ISB's tenant ID, publicly resolvable from `login.microsoftonline.com/isb.edu/v2.0/.well-known/openid-configuration`). Azure then refuses tokens for anyone outside ISB's directory, closing the hole where a hostile tenant self-asserts an `@isb.edu` email claim. The app's email check stays as defense-in-depth (it also filters ISB-tenant guests without `@isb.edu` addresses).
+   - After locking: only real ISB accounts can sign in (test with one — a personal dev account will be rejected), and the first ISB sign-in may require user consent; if ISB IT has disabled user consent, an ISB tenant admin must approve the app.
 4. **Database** — apply every file in `supabase/migrations/` (in order) via the Supabase SQL editor; migrations are manual by design.
 5. **Notes**
    - Security headers are set in `next.config.ts`; HSTS is not duplicated there because Vercel serves it automatically on HTTPS domains. CSP is deferred (needs nonce plumbing).
