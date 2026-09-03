@@ -87,9 +87,10 @@ Content extraction pipeline (`pipeline/` + `scripts/pipeline/`). Full workflow d
 - **Phase 0.3: Microsoft auth + isb.edu enforcement — DONE** (Azure OAuth, callback with admin cleanup, proxy session refresh + route protection, real user footer with sign-out). **Phase 0 complete.**
 - **Phase 1.1 — DONE** (content pipeline part 1: pipeline/ scaffolding, `npm run split` chunking script with plan validation + mupdf smoke-test render, split-plan + extraction claude.ai prompts)
 - **Phase 1.2 — DONE** (content pipeline part 2: `0002_pipeline_tags.sql` — text[] tags, nullable industry/difficulty, `prompt`, `(casebook_id, source_start_page)` idempotency key; `npm run import` script: inbox validation + skip report, mupdf page rendering, storage uploads, casebook/case upserts). **Phase 1 complete.**
+- **Phase 2.1 (minimal viewer) — DONE** (/cases library table + mobile cards on real data with dynamic tag pills; /cases/[id] detail: source line, tag pills, prompt, collapsible transcript with shaded interviewer turns, exhibit/solution images via 1h signed URLs from the private bucket; filters + tracking buttons remain disabled placeholders)
 
 Upcoming:
-- Phase 2: case library
+- Phase 2: case library (2.2+: search, filters, status column)
 - Phase 3: tracking
 - Phase 4: matching
 - Phase 5: casebooks/frameworks
