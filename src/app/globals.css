@@ -31,9 +31,14 @@
   /* Radii */
   --r: 12px; /* cards */
   --rs: 8px; /* buttons / inputs */
+  --r-modal: 16px; /* dialog panels */
 
   /* Shadow */
   --sh: 0 1px 2px rgba(23, 26, 25, 0.05), 0 2px 10px rgba(23, 26, 25, 0.04);
+  --sh-modal: 0 24px 60px rgba(23, 26, 25, 0.25);
+
+  /* Dialog backdrop (--ink at 42%) */
+  --overlay: rgba(23, 26, 25, 0.42);
 
   /* Composite surfaces */
   --login-panel: linear-gradient(180deg, #f1efe9, #eae7df);

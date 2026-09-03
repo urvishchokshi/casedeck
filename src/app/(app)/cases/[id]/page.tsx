@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Button } from "@/components/ui/Button";
 import { Pill } from "@/components/ui/Pill";
+import { RatingPill } from "@/components/RatingPill";
 import { createClient } from "@/lib/supabase/server";
 import type { Case } from "@/lib/types";
 import { Transcript } from "./Transcript";
+import { CaseActions, type CaseProgressState } from "./CaseActions";
 
 type CaseDetailRow = Case & { casebook: { name: string } | null };
 
@@ -59,6 +60,25 @@ export default async function CaseDetailPage({
 
   const c = data as unknown as CaseDetailRow;
 
+  // The (app) layout redirects unauthenticated visitors; the guard is
+  // belt-and-braces. RLS also scopes progress rows to the user.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  let progress: CaseProgressState | null = null;
+  if (user) {
+    const { data: progressRow, error: progressError } = await supabase
+      .from("user_case_progress")
+      .select("completed, marked_for_later, self_score, quality_rating")
+      .eq("user_id", user.id)
+      .eq("case_id", id)
+      .maybeSingle();
+    if (progressError) {
+      throw new Error(`Failed to load progress: ${progressError.message}`);
+    }
+    progress = progressRow;
+  }
+
   const imagePaths = [...c.solution_image_urls, ...c.exhibit_image_urls];
   const signedByPath = new Map<string, string>();
   if (imagePaths.length > 0) {
@@ -106,11 +126,7 @@ export default async function CaseDetailPage({
             {c.industry && <Pill>{c.industry}</Pill>}
             {c.company && <Pill>{c.company}</Pill>}
             {c.difficulty && <Pill>{c.difficulty}</Pill>}
-            {c.rating_count > 0 && c.avg_rating !== null ? (
-              <Pill tone="amber">★ {c.avg_rating.toFixed(1)}</Pill>
-            ) : (
-              <Pill tone="amber">New</Pill>
-            )}
+            <RatingPill avg={c.avg_rating} count={c.rating_count} />
             {c.tags_inferred && (
               <Pill className="text-[var(--muted)]">tags inferred</Pill>
             )}
@@ -121,12 +137,7 @@ export default async function CaseDetailPage({
             ))}
           </div>
         </div>
-        <div className="flex flex-none gap-2">
-          <Button variant="secondary" disabled>
-            Mark for later
-          </Button>
-          <Button disabled>Mark done</Button>
-        </div>
+        <CaseActions caseId={c.id} progress={progress} />
       </div>
 
       <div className="flex flex-col gap-[22px]">

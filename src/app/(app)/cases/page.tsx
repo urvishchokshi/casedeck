@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Pill } from "@/components/ui/Pill";
+import { RatingPill } from "@/components/RatingPill";
 import { createClient } from "@/lib/supabase/server";
+import { MIN_RATINGS_TO_SHOW, shownRating } from "@/lib/rating";
 import type { DifficultyLevel } from "@/lib/types";
 import {
   parseCaseFilters,
@@ -34,18 +36,34 @@ interface FacetRow {
   company: string | null;
 }
 
+interface ProgressInfo {
+  completed: boolean;
+  marked_for_later: boolean;
+}
+
 const thClasses =
   "border-b border-[var(--line)] px-3 py-[11px] text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--muted)] first:pl-4 last:pr-4";
 const tdClasses =
   "border-b border-[var(--line-soft)] px-3 py-2.5 text-[13px] first:pl-4 last:pr-4";
 
 function Rating({ c }: { c: CaseListRow }) {
-  return c.rating_count > 0 && c.avg_rating !== null ? (
-    <span className="font-semibold text-[var(--amber)]">
-      ★ {c.avg_rating.toFixed(1)}
-    </span>
+  const avg = shownRating(c.avg_rating, c.rating_count);
+  return avg !== null ? (
+    <span className="font-semibold text-[var(--amber)]">★ {avg.toFixed(1)}</span>
   ) : (
     <span className="text-[var(--muted)]">New</span>
+  );
+}
+
+function StatusPills({ progress }: { progress: ProgressInfo | undefined }) {
+  if (!progress || (!progress.completed && !progress.marked_for_later)) {
+    return <span className="text-[var(--muted)]">—</span>;
+  }
+  return (
+    <span className="flex flex-wrap gap-1.5">
+      {progress.completed && <Pill tone="accent">Done</Pill>}
+      {progress.marked_for_later && <Pill tone="amber">Marked</Pill>}
+    </span>
   );
 }
 
@@ -70,6 +88,11 @@ export default async function CasesPage({
 }) {
   const filters = parseCaseFilters(await searchParams);
   const supabase = await createClient();
+  // The (app) layout redirects unauthenticated visitors, so user is present;
+  // the null guard just keeps this page from crashing if that ever changes.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // One filtered query; every case has a casebook (casebook_id NOT NULL), so
   // the !inner embed is lossless and lets ?casebook= filter on the slug.
@@ -92,29 +115,62 @@ export default async function CasesPage({
   if (filters.companies.length) query = query.in("company", filters.companies);
   if (filters.casebooks.length)
     query = query.in("casebook.slug", filters.casebooks);
-  if (filters.rating !== null) query = query.gte("avg_rating", filters.rating);
+  // The rating threshold pairs with a count gate so the filter can't match
+  // cases still displayed as "New" (avg hidden until MIN_RATINGS_TO_SHOW).
+  if (filters.rating !== null)
+    query = query
+      .gte("avg_rating", filters.rating)
+      .gte("rating_count", MIN_RATINGS_TO_SHOW);
   const safeQ = sanitizeSearchQuery(filters.q);
   if (safeQ)
     query = query.or(`title.ilike.%${safeQ}%,company.ilike.%${safeQ}%`);
 
-  const [casesRes, facetsRes, casebooksRes] = await Promise.all([
+  const [casesRes, facetsRes, casebooksRes, progressRes] = await Promise.all([
     query,
     // Unfiltered facet source: chip options always reflect the whole library.
     // Subject to the PostgREST default row cap (1000) — fine at current scale;
     // revisit alongside pagination.
     supabase.from("cases").select("case_types, industry, difficulty, company"),
     supabase.from("casebooks").select("slug, name").order("name"),
+    user
+      ? supabase
+          .from("user_case_progress")
+          .select("case_id, completed, marked_for_later")
+          .eq("user_id", user.id)
+      : null,
   ]);
-  const firstError = casesRes.error ?? facetsRes.error ?? casebooksRes.error;
+  const firstError =
+    casesRes.error ?? facetsRes.error ?? casebooksRes.error ?? progressRes?.error;
   if (firstError) {
     throw new Error(`Failed to load cases: ${firstError.message}`);
   }
 
-  const cases = ((casesRes.data ?? []) as unknown as CaseListRow[]).sort(
-    (a, b) =>
-      (a.casebook?.name ?? "").localeCompare(b.casebook?.name ?? "") ||
-      a.source_start_page - b.source_start_page
+  const progressByCase = new Map<string, ProgressInfo>(
+    (progressRes?.data ?? []).map((p) => [
+      p.case_id,
+      { completed: p.completed, marked_for_later: p.marked_for_later },
+    ])
   );
+
+  // The Status group filters in JS after the query: "not started" is the
+  // absence of a progress row, which the SQL filter can't express. Selected
+  // Status chips OR together; fine under the 500-row cap.
+  const statusClauses: ((p: ProgressInfo | undefined) => boolean)[] = [];
+  if (filters.status === "done") statusClauses.push((p) => p?.completed === true);
+  if (filters.status === "not_done") statusClauses.push((p) => !p?.completed);
+  if (filters.marked) statusClauses.push((p) => p?.marked_for_later === true);
+
+  const cases = ((casesRes.data ?? []) as unknown as CaseListRow[])
+    .filter(
+      (c) =>
+        statusClauses.length === 0 ||
+        statusClauses.some((clause) => clause(progressByCase.get(c.id)))
+    )
+    .sort(
+      (a, b) =>
+        (a.casebook?.name ?? "").localeCompare(b.casebook?.name ?? "") ||
+        a.source_start_page - b.source_start_page
+    );
   const facets = (facetsRes.data ?? []) as unknown as FacetRow[];
   const casebooks = casebooksRes.data ?? [];
   const totalCases = facets.length;
@@ -285,7 +341,9 @@ export default async function CasesPage({
                     <td className={tdClasses}>
                       <Rating c={c} />
                     </td>
-                    <td className={`${tdClasses} text-[var(--muted)]`}>—</td>
+                    <td className={tdClasses}>
+                      <StatusPills progress={progressByCase.get(c.id)} />
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -314,10 +372,12 @@ export default async function CasesPage({
                   ))}
                   {c.company && <Pill>{c.company}</Pill>}
                   {c.difficulty && <Pill>{c.difficulty}</Pill>}
-                  {c.rating_count > 0 && c.avg_rating !== null ? (
-                    <Pill tone="amber">★ {c.avg_rating.toFixed(1)}</Pill>
-                  ) : (
-                    <Pill tone="amber">New</Pill>
+                  <RatingPill avg={c.avg_rating} count={c.rating_count} />
+                  {progressByCase.get(c.id)?.completed && (
+                    <Pill tone="accent">Done</Pill>
+                  )}
+                  {progressByCase.get(c.id)?.marked_for_later && (
+                    <Pill tone="amber">Marked</Pill>
                   )}
                 </div>
               </Link>

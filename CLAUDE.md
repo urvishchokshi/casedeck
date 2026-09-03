@@ -64,10 +64,19 @@ Schema lives in `supabase/migrations/` (`0001_init.sql` base, `0002_pipeline_tag
 
 /cases filter/search architecture (Phase 2.2):
 
-- **URL search params are the single source of truth** (`?type=A&type=B&difficulty=Easy&industry=…&company=…&casebook=<slug>&rating=4&q=…`) — views are shareable/bookmarkable and back/forward work. Parsing/serializing/counting lives in `src/lib/case-filters.ts` (`parseCaseFilters` validates `difficulty` against the enum and `rating` ∈ {3,4}; text params pass through — unknown values just match nothing).
-- **Semantics**: multi-select within a group = OR (`case_types` via array overlap); across groups = AND. Rating is single-select (`gte avg_rating`). Search `q` = case-insensitive `ilike` on title OR company, sanitized by **stripping** PostgREST/LIKE metacharacters (`sanitizeSearchQuery`) before interpolation into `.or()`.
-- **Server side** (`src/app/(app)/cases/page.tsx`, server component): one filtered Supabase query (`overlaps` for type, `.in` for difficulty/industry/company, `casebooks!inner` embed + `.in("casebook.slug", …)` for casebook — lossless since `casebook_id` is NOT NULL) + an unfiltered facet query deriving distinct chip options + a `casebooks` list, all in one `Promise.all`. Chip options are unioned with selected-but-unknown values so stale URLs render removable chips. Query capped at `.limit(500)` — pagination is a future enhancement if needed.
-- **Client side** (`src/app/(app)/cases/CaseFilters.tsx`): chip toggles + 300ms-debounced search push `router.replace(…, { scroll: false })`; filter state arrives as props from the server (no `useSearchParams`, so no Suspense boundary needed). Status chips are disabled placeholders (`title="Coming soon"`) until Phase 3; the Rating row always renders even while all ratings are null.
+- **URL search params are the single source of truth** (`?type=A&type=B&difficulty=Easy&industry=…&company=…&casebook=<slug>&rating=4&status=done&marked=1&q=…`) — views are shareable/bookmarkable and back/forward work. Parsing/serializing/counting lives in `src/lib/case-filters.ts` (`parseCaseFilters` validates `difficulty` against the enum, `rating` ∈ {3,4}, `status` ∈ {done,not_done}, `marked` = "1"; text params pass through — unknown values just match nothing).
+- **Semantics**: multi-select within a group = OR (`case_types` via array overlap); across groups = AND. Rating is single-select (`gte avg_rating`). The Status group spans two params — `status` (single-select done|not_done) + `marked` flag — and its selected chips OR together (done + marked = completed OR marked_for_later). Search `q` = case-insensitive `ilike` on title OR company, sanitized by **stripping** PostgREST/LIKE metacharacters (`sanitizeSearchQuery`) before interpolation into `.or()`.
+- **Server side** (`src/app/(app)/cases/page.tsx`, server component): one filtered Supabase query (`overlaps` for type, `.in` for difficulty/industry/company, `casebooks!inner` embed + `.in("casebook.slug", …)` for casebook — lossless since `casebook_id` is NOT NULL) + an unfiltered facet query deriving distinct chip options + a `casebooks` list + the current user's `user_case_progress` rows, all in one `Promise.all`. Status/marked filtering happens in JS **after** the query ("not started" = absence of a progress row, inexpressible in the SQL filter; fine under the 500 cap). Chip options are unioned with selected-but-unknown values so stale URLs render removable chips. Query capped at `.limit(500)` — pagination is a future enhancement if needed.
+- **Client side** (`src/app/(app)/cases/CaseFilters.tsx`): chip toggles + 300ms-debounced search push `router.replace(…, { scroll: false })`; filter state arrives as props from the server (no `useSearchParams`, so no Suspense boundary needed). The Status row is hardcoded client-side (not a `ChipGroup` — it has no facet source); the Rating row always renders even while all ratings are null.
+
+## Tracking
+
+Per-user progress on cases (Phase 3.1). Table `user_case_progress` (see Database); **no delete policy**, so every undo is an UPDATE/upsert, never a delete.
+
+- **Server actions** (`src/app/actions/progress.ts`, `"use server"` — the only mutation path): `markDone(caseId, qualityRating 1–5, selfScore 1–10)` (both scores required, validated server-side; sets `completed_at`), `unmarkDone` (completed false, scores + completed_at null), `toggleMarkedForLater` (read-then-upsert). All derive the user from the session cookie client (never `admin.ts`), upsert on `onConflict: "user_id,case_id"` with payloads that omit untouched columns (upsert only updates provided columns), return `{ ok } | { ok: false, error }` instead of throwing, and `revalidatePath("/cases")` + `revalidatePath("/cases/<id>")`. Writing/nulling `quality_rating` is what fires the `recompute_case_rating` trigger (security definer; averages non-null ratings regardless of `completed`).
+- **Case detail** (`/cases/[id]` → `CaseActions.tsx`, client): "Mark done" opens the hand-rolled "Log this case" dialog (5 cumulative-★ quality buttons amber-selected, 10 square self-score buttons accent-selected, save disabled until both chosen, Escape/backdrop close, no note field). Already done → "Done ✓" (accent-50) reopens the dialog pre-filled, with an "Unmark done" text action inside. "Mark for later" toggles optimistically (`useOptimistic` + transition); flagged = amber-50 "Marked ★". Dialog backdrop/shadow tokens: `--overlay`, `--sh-modal`.
+- **Library**: Status column/pills — "Done" (accent Pill) and/or "Marked" (amber Pill), else "—" — from a `Map<case_id, progress>` join; same pills on mobile cards.
+- **Rating display rule**: show the average only once `rating_count >= MIN_RATINGS_TO_SHOW` (3), else "New" — everywhere, via `shownRating` in `src/lib/rating.ts` / `src/components/RatingPill.tsx`.
 
 ## Pipeline
 
@@ -100,10 +109,10 @@ Content extraction pipeline (`pipeline/` + `scripts/pipeline/`). Full workflow d
 - **Phase 2.1.1 — DONE** (visual-QA fixes: `company` field end-to-end — `0003_company.sql`, extraction prompt firm-attribution rule, import script; extra_tags dropped from the library table, desktop subline reduced to "p. N"; detail pill row gains company + muted extra_tags pills)
 - **Phase 2.1.2 — DONE** (library table gains a Company column — columns now Case / Casebook / Company / Industry / Type / Difficulty / Rating / Status — plus the first working filter: a Company filter row driven by `?company=` searchParams with options derived from the data; other filter groups remain disabled placeholders for Phase 2.2. ⚠️ /cases now selects `company` explicitly, so migration 0003 must be applied)
 - **Phase 2.2 — DONE** (dynamic filter + search system for /cases; see "Case library filters" section)
+- **Phase 3.1 — DONE** (live tracking: `src/app/actions/progress.ts` server actions, "Log this case" rating dialog + optimistic mark-for-later on /cases/[id], library Status column + working status/marked filters, `rating_count >= 3` "New" display rule; see "Tracking" section. **Phase 2 complete** — the status column subsumed 2.3)
 
 Upcoming:
-- Phase 2: case library (2.3+: status column)
-- Phase 3: tracking
+- Phase 3: tracking (3.2: dashboard)
 - Phase 4: matching
 - Phase 5: casebooks/frameworks
 

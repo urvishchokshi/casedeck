@@ -2,9 +2,14 @@ import type { DifficultyLevel } from "@/lib/types";
 
 /**
  * URL search params are the single source of truth for the /cases filters:
- * ?type=A&type=B&difficulty=Easy&industry=…&company=…&casebook=<slug>&rating=4&q=…
+ * ?type=A&type=B&difficulty=Easy&industry=…&company=…&casebook=<slug>&rating=4
+ * &status=done&marked=1&q=…
  * Multi-select within a group = OR; across groups = AND. Rating is single-select.
+ * status + marked form one Status group: selected chips OR together
+ * (e.g. status=done&marked=1 → completed OR marked for later).
  */
+export type StatusFilter = "done" | "not_done";
+
 export interface CaseFilterState {
   types: string[];
   difficulties: DifficultyLevel[];
@@ -13,6 +18,8 @@ export interface CaseFilterState {
   /** Casebook slugs. */
   casebooks: string[];
   rating: 3 | 4 | null;
+  status: StatusFilter | null;
+  marked: boolean;
   /** Trimmed raw query; sanitize with sanitizeSearchQuery before use in SQL. */
   q: string;
 }
@@ -47,6 +54,9 @@ export function parseCaseFilters(sp: {
   );
   const ratingRaw = first(sp.rating);
   const rating = ratingRaw === "4" ? 4 : ratingRaw === "3" ? 3 : null;
+  const statusRaw = first(sp.status);
+  const status =
+    statusRaw === "done" || statusRaw === "not_done" ? statusRaw : null;
   return {
     types: toArray(sp.type),
     difficulties,
@@ -54,6 +64,8 @@ export function parseCaseFilters(sp: {
     companies: toArray(sp.company),
     casebooks: toArray(sp.casebook),
     rating,
+    status,
+    marked: first(sp.marked) === "1",
     q: (first(sp.q) ?? "").trim().slice(0, 100),
   };
 }
@@ -66,6 +78,8 @@ export function buildCasesSearchString(state: CaseFilterState): string {
   for (const v of state.companies) params.append("company", v);
   for (const v of state.casebooks) params.append("casebook", v);
   if (state.rating !== null) params.set("rating", String(state.rating));
+  if (state.status !== null) params.set("status", state.status);
+  if (state.marked) params.set("marked", "1");
   const q = state.q.trim();
   if (q) params.set("q", q.slice(0, 100));
   const s = params.toString();
@@ -95,6 +109,8 @@ export function countActiveFilters(state: CaseFilterState): number {
     state.companies.length +
     state.casebooks.length +
     (state.rating !== null ? 1 : 0) +
+    (state.status !== null ? 1 : 0) +
+    (state.marked ? 1 : 0) +
     (sanitizeSearchQuery(state.q) ? 1 : 0)
   );
 }

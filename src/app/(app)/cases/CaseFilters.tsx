@@ -7,6 +7,7 @@ import {
   countActiveFilters,
   type CaseFilterState,
   type FilterOption,
+  type StatusFilter,
 } from "@/lib/case-filters";
 
 export type FilterParam =
@@ -136,8 +137,12 @@ const ratingOptions: { label: string; value: 3 | 4 | null }[] = [
   { label: "Any", value: null },
 ];
 
-// Tracking-dependent chips — logic arrives in Phase 3.
-const statusPlaceholders = ["Not started", "Done", "Marked for later"];
+// One visual Status group over two URL params: status (single-select
+// done|not_done) and marked (flag). Selected chips OR together server-side.
+const statusOptions: { label: string; value: StatusFilter }[] = [
+  { label: "Not done", value: "not_done" },
+  { label: "Done", value: "done" },
+];
 
 export function CaseFilterGroups({
   groups,
@@ -195,17 +200,28 @@ export function CaseFilterGroups({
       <div className={rowClasses}>
         <div className={labelClasses}>Status</div>
         <div className="flex flex-wrap gap-1.5">
-          {statusPlaceholders.map((label) => (
-            <button
-              key={label}
-              type="button"
-              disabled
-              title="Coming soon"
-              className={`${chipBase} border border-[var(--line)] bg-[var(--card)] text-[var(--ink)] disabled:cursor-not-allowed disabled:opacity-60`}
+          {statusOptions.map((option) => (
+            <FilterChip
+              key={option.value}
+              selected={filters.status === option.value}
+              onClick={() =>
+                navigate(router, pathname, {
+                  ...filters,
+                  status: filters.status === option.value ? null : option.value,
+                })
+              }
             >
-              {label}
-            </button>
+              {option.label}
+            </FilterChip>
           ))}
+          <FilterChip
+            selected={filters.marked}
+            onClick={() =>
+              navigate(router, pathname, { ...filters, marked: !filters.marked })
+            }
+          >
+            Marked for later
+          </FilterChip>
         </div>
       </div>
     </>
