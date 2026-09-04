@@ -7,14 +7,9 @@ import type { DifficultyLevel } from "@/lib/types";
 import {
   parseCaseFilters,
   sanitizeSearchQuery,
-  countActiveFilters,
   type FilterOption,
 } from "@/lib/case-filters";
-import {
-  CaseFilterGroups,
-  CaseSearchControls,
-  type ChipGroup,
-} from "./CaseFilters";
+import { CaseFilterBar, type FilterGroup } from "./CaseFilters";
 
 export const metadata = { title: "Case library" };
 
@@ -176,11 +171,22 @@ export default async function CasesPage({
   const facets = (facetsRes.data ?? []) as unknown as FacetRow[];
   const casebooks = casebooksRes.data ?? [];
   const totalCases = facets.length;
-  const activeCount = countActiveFilters(filters);
 
   const nonNull = (values: (string | null)[]) =>
     values.filter((v): v is string => v !== null);
-  const chipGroups: ChipGroup[] = [
+  const filterGroups: FilterGroup[] = [
+    {
+      label: "Type",
+      param: "type" as const,
+      options: toOptions(facets.flatMap((f) => f.case_types), filters.types),
+      selected: filters.types,
+    },
+    {
+      label: "Industry",
+      param: "industry" as const,
+      options: toOptions(nonNull(facets.map((f) => f.industry)), filters.industries),
+      selected: filters.industries,
+    },
     {
       label: "Difficulty",
       param: "difficulty" as const,
@@ -192,18 +198,6 @@ export default async function CasesPage({
           DIFFICULTY_ORDER.indexOf(a.value) - DIFFICULTY_ORDER.indexOf(b.value)
       ),
       selected: filters.difficulties,
-    },
-    {
-      label: "Industry",
-      param: "industry" as const,
-      options: toOptions(nonNull(facets.map((f) => f.industry)), filters.industries),
-      selected: filters.industries,
-    },
-    {
-      label: "Type",
-      param: "type" as const,
-      options: toOptions(facets.flatMap((f) => f.case_types), filters.types),
-      selected: filters.types,
     },
     {
       label: "Company",
@@ -226,20 +220,19 @@ export default async function CasesPage({
 
   return (
     <div>
-      <div className="mb-[22px] flex flex-wrap items-end justify-between gap-6">
-        <div>
-          <h1 className="text-[40px] text-[var(--ink)]">Case library</h1>
-          <p className="mt-1 text-[14px] text-[var(--muted)]">
-            {`${cases.length} ${cases.length === 1 ? "case" : "cases"}`}
-            {activeCount > 0 &&
-              ` · ${activeCount} ${activeCount === 1 ? "filter" : "filters"} active`}
-          </p>
-        </div>
-        <CaseSearchControls filters={filters} />
+      <div className="mb-[22px]">
+        <h1 className="text-[40px] text-[var(--ink)]">Case library</h1>
+        <p className="mt-1 text-[14px] text-[var(--muted)]">
+          {`${cases.length} ${cases.length === 1 ? "case" : "cases"}`}
+        </p>
       </div>
 
       <div className="mb-[18px] flex flex-col gap-[11px] rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] px-[18px] py-4 [box-shadow:var(--sh)]">
-        <CaseFilterGroups groups={chipGroups} filters={filters} />
+        <CaseFilterBar
+          groups={filterGroups}
+          filters={filters}
+          resultCount={cases.length}
+        />
       </div>
 
       {totalCases === 0 ? (

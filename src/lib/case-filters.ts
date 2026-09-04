@@ -100,8 +100,12 @@ export function sanitizeSearchQuery(raw: string): string {
     .slice(0, 100);
 }
 
-/** Each selected chip counts as one filter; rating and a non-empty q add one each. */
-export function countActiveFilters(state: CaseFilterState): number {
+/**
+ * Filters surfaced in the bar summary and active pills: dimension values,
+ * rating, and status/marked (1 each). Excludes q — the search text is
+ * visible in its own input.
+ */
+export function countDisplayFilters(state: CaseFilterState): number {
   return (
     state.types.length +
     state.difficulties.length +
@@ -110,7 +114,6 @@ export function countActiveFilters(state: CaseFilterState): number {
     state.casebooks.length +
     (state.rating !== null ? 1 : 0) +
     (state.status !== null ? 1 : 0) +
-    (state.marked ? 1 : 0) +
-    (sanitizeSearchQuery(state.q) ? 1 : 0)
+    (state.marked ? 1 : 0)
   );
 }
