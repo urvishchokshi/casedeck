@@ -23,6 +23,7 @@ interface CaseListRow {
   difficulty: DifficultyLevel | null;
   avg_rating: number | null;
   rating_count: number;
+  /** Not displayed here (it lives on the case page) — kept as the order tiebreaker. */
   source_start_page: number;
   casebook: { name: string } | null;
 }
@@ -294,9 +295,6 @@ export default async function CasesPage({
                         <span className="block text-[15px] font-semibold leading-tight tracking-[-0.01em] text-[var(--ink)]">
                           {c.title}
                         </span>
-                        <span className="block font-[family-name:var(--font-mono)] text-[12px] text-[var(--muted)]">
-                          p. {c.source_start_page}
-                        </span>
                       </Link>
                     </td>
                     <td className={`${tdClasses} text-[var(--muted)]`}>
@@ -356,7 +354,7 @@ export default async function CasesPage({
                   {c.title}
                 </div>
                 <div className="mt-0.5 font-[family-name:var(--font-mono)] text-[12px] text-[var(--muted)]">
-                  {c.casebook?.name ?? "—"} · p. {c.source_start_page}
+                  {c.casebook?.name ?? "—"}
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-1.5">
                   {c.case_types.map((t, i) => (
