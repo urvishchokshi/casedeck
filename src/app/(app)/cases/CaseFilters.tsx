@@ -8,7 +8,6 @@ import {
   countDisplayFilters,
   type CaseFilterState,
   type FilterOption,
-  type StatusFilter,
 } from "@/lib/case-filters";
 
 export type FilterParam =
@@ -42,36 +41,21 @@ const ratingOptions: { label: string; value: 3 | 4 | null }[] = [
   { label: "4★ & up", value: 4 },
 ];
 
-// The segmented control is single-select over the status param (marked is
-// now a status value; `marked=1` is a legacy alias). A legacy URL combining
-// status + marked=1 still ORs server-side but maps to no segment; that state
-// renders removable Status pills instead.
-type StatusSegment = "all" | "not_done" | "done" | "retry" | "revisit" | "marked";
+// The segmented control is single-select over the status param.
+type StatusSegment = "all" | "not_done" | "done" | "revisit";
 
 const statusSegments: { label: string; value: StatusSegment }[] = [
   { label: "All", value: "all" },
   { label: "Not done", value: "not_done" },
   { label: "Done", value: "done" },
-  { label: "Retry", value: "retry" },
   { label: "Revisit", value: "revisit" },
-  { label: "Marked", value: "marked" },
 ];
 
-function segmentOf(filters: CaseFilterState): StatusSegment | null {
-  // Legacy ?marked=1 alone still selects the Marked segment.
-  if (filters.status === null) return filters.marked ? "marked" : "all";
-  if (filters.marked) return null;
-  return filters.status;
-}
-
-const segmentState: Record<StatusSegment, Pick<CaseFilterState, "status" | "marked">> = {
-  all: { status: null, marked: false },
-  not_done: { status: "not_done", marked: false },
-  done: { status: "done", marked: false },
-  retry: { status: "retry", marked: false },
-  revisit: { status: "revisit", marked: false },
-  // Canonical form — clicking a segment rewrites legacy marked=1 URLs.
-  marked: { status: "marked", marked: false },
+const segmentState: Record<StatusSegment, Pick<CaseFilterState, "status">> = {
+  all: { status: null },
+  not_done: { status: "not_done" },
+  done: { status: "done" },
+  revisit: { status: "revisit" },
 };
 
 export function CaseFilterBar({
@@ -144,7 +128,7 @@ export function CaseFilterBar({
     push({ [key]: nextValues });
   };
 
-  const segment = segmentOf(filters);
+  const segment: StatusSegment = filters.status ?? "all";
   const displayCount = countDisplayFilters(filters);
 
   return (
@@ -229,12 +213,7 @@ export function CaseFilterBar({
 
       {displayCount > 0 && (
         <div className="flex flex-wrap items-center gap-1.5 border-t border-[var(--line-soft)] pt-[11px]">
-          <ActivePills
-            groups={groups}
-            filters={filters}
-            legacyCombo={segment === null}
-            push={push}
-          />
+          <ActivePills groups={groups} filters={filters} push={push} />
           <button
             type="button"
             onClick={clearAll}
@@ -532,12 +511,10 @@ function FilterDropdown(props: FilterDropdownProps) {
 function ActivePills({
   groups,
   filters,
-  legacyCombo,
   push,
 }: {
   groups: FilterGroup[];
   filters: CaseFilterState;
-  legacyCombo: boolean;
   push: (next: Partial<CaseFilterState>) => void;
 }) {
   const pills: { key: string; dim: string; value: string; remove: () => void }[] = [];
@@ -563,34 +540,6 @@ function ActivePills({
       value: `${filters.rating}★ & up`,
       remove: () => push({ rating: null }),
     });
-  }
-
-  // Only a legacy URL combining status + marked is unrepresentable in the
-  // segmented control — surface it as removable pills so it stays escapable.
-  if (legacyCombo) {
-    if (filters.status !== null) {
-      const statusLabels: Record<StatusFilter, string> = {
-        done: "Done",
-        not_done: "Not done",
-        retry: "Retry",
-        revisit: "Revisit",
-        marked: "Marked",
-      };
-      pills.push({
-        key: "status",
-        dim: "Status",
-        value: statusLabels[filters.status],
-        remove: () => push({ status: null }),
-      });
-    }
-    if (filters.marked) {
-      pills.push({
-        key: "marked",
-        dim: "Status",
-        value: "Marked",
-        remove: () => push({ marked: false }),
-      });
-    }
   }
 
   return (

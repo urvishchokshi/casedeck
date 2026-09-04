@@ -5,7 +5,7 @@ import type { CaseOutcome, DifficultyLevel } from "@/lib/types";
  * signed-in user's progress rows (with their case embed) plus a lightweight
  * facet list of all cases — no queries, no React.
  *
- * "Attempted" = any non-null outcome (done, retry and revisit all count).
+ * "Attempted" = any non-null outcome (done and revisit both count).
  * Scoring rule used throughout: a row contributes to an average only when
  * `outcome !== null && self_score !== null`. The logCase contract guarantees
  * self_score exists iff outcome is set, but we filter defensively rather
@@ -14,8 +14,6 @@ import type { CaseOutcome, DifficultyLevel } from "@/lib/types";
 
 /** Label for null industry/difficulty groupings; always sorted last. */
 export const UNTAGGED = "Untagged";
-/** Max rows shown in the "Marked for later" card. */
-export const MARKED_LIMIT = 8;
 /** Minimum scored attempted cases for a grouping to qualify as "weakest ground". */
 export const WEAKEST_MIN_CASES = 2;
 /** Industry bars turn amber below this average self-score. */
@@ -32,11 +30,9 @@ export interface ProgressCaseInfo {
 export interface ProgressWithCase {
   case_id: string;
   outcome: CaseOutcome | null;
-  marked_for_later: boolean;
   self_score: number | null;
   quality_rating: number | null;
   completed_at: string | null;
-  updated_at: string;
   case: ProgressCaseInfo | null;
 }
 
@@ -48,11 +44,9 @@ export interface CaseFacet {
 
 export interface DashboardStats {
   attempted: number;
-  retry: number;
   revisit: number;
   total: number;
   avgSelfScore: number | null;
-  marked: number;
   rated: number;
   lastCompletedAt: string | null;
 }
@@ -74,13 +68,11 @@ export function computeStats(
   }
   return {
     attempted: attemptedRows.length,
-    retry: attemptedRows.filter((p) => p.outcome === "retry").length,
     revisit: attemptedRows.filter((p) => p.outcome === "revisit").length,
     total: totalCases,
     avgSelfScore: scores.length
       ? scores.reduce((a, b) => a + b, 0) / scores.length
       : null,
-    marked: progress.filter((p) => p.marked_for_later).length,
     rated: progress.filter((p) => p.quality_rating !== null).length,
     lastCompletedAt,
   };
@@ -208,35 +200,6 @@ export function weakestGround(progress: ProgressWithCase[]): WeakGrouping[] {
         a.label.localeCompare(b.label)
     )
     .slice(0, 3);
-}
-
-export interface MarkedCase {
-  id: string;
-  title: string;
-  case_types: string[];
-  difficulty: DifficultyLevel | null;
-}
-
-/** Most recently touched marked cases (updated_at is the only signal). */
-export function markedCases(progress: ProgressWithCase[]): {
-  cases: MarkedCase[];
-  total: number;
-} {
-  const marked = progress
-    .filter(
-      (p): p is ProgressWithCase & { case: ProgressCaseInfo } =>
-        p.marked_for_later && p.case !== null
-    )
-    .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
-  return {
-    total: marked.length,
-    cases: marked.slice(0, MARKED_LIMIT).map((p) => ({
-      id: p.case.id,
-      title: p.case.title,
-      case_types: p.case.case_types,
-      difficulty: p.case.difficulty,
-    })),
-  };
 }
 
 export interface DifficultySegment {

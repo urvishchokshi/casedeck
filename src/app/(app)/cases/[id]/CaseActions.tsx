@@ -1,25 +1,14 @@
 "use client";
 
-import {
-  useEffect,
-  useOptimistic,
-  useRef,
-  useState,
-  useTransition,
-} from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/Button";
 import { Pill } from "@/components/ui/Pill";
-import {
-  clearOutcome,
-  logCase,
-  toggleMarkedForLater,
-} from "@/app/actions/progress";
+import { clearOutcome, logCase } from "@/app/actions/progress";
 import { OUTCOME_META, OUTCOME_ORDER } from "@/lib/outcome";
 import type { CaseOutcome } from "@/lib/types";
 
 export interface CaseProgressState {
   outcome: CaseOutcome | null;
-  marked_for_later: boolean;
   self_score: number | null;
   quality_rating: number | null;
 }
@@ -35,39 +24,13 @@ export function CaseActions({
   progress: CaseProgressState | null;
 }) {
   const outcome = progress?.outcome ?? null;
-  const [optimisticMarked, setOptimisticMarked] = useOptimistic(
-    progress?.marked_for_later ?? false
-  );
-  const [markPending, startMarkTransition] = useTransition();
-  const [markError, setMarkError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [unmarkPending, startUnmarkTransition] = useTransition();
   const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
     <div className="flex flex-none flex-col items-end gap-1.5">
       <div className="flex gap-2">
-        <Button
-          variant="secondary"
-          aria-pressed={optimisticMarked}
-          // Disabled while in flight: a second click before the server settles
-          // would re-toggle from a stale read and desync UI and DB.
-          disabled={markPending}
-          className={
-            optimisticMarked
-              ? "border-[var(--amber-50)]! bg-[var(--amber-50)]! text-[var(--amber)]! hover:bg-[var(--amber-50)]!"
-              : ""
-          }
-          onClick={() =>
-            startMarkTransition(async () => {
-              setMarkError(null);
-              setOptimisticMarked(!optimisticMarked);
-              const result = await toggleMarkedForLater(caseId);
-              if (!result.ok) setMarkError(result.error);
-            })
-          }
-        >
-          {optimisticMarked ? "Marked ★" : "Mark for later"}
-        </Button>
         {outcome === null ? (
           <Button onClick={() => setDialogOpen(true)}>Log this case</Button>
         ) : (
@@ -89,9 +52,9 @@ export function CaseActions({
               disabled={unmarkPending}
               onClick={() =>
                 startUnmarkTransition(async () => {
-                  setMarkError(null);
+                  setActionError(null);
                   const result = await clearOutcome(caseId);
-                  if (!result.ok) setMarkError(result.error);
+                  if (!result.ok) setActionError(result.error);
                 })
               }
             >
@@ -100,9 +63,9 @@ export function CaseActions({
           </span>
         )}
       </div>
-      {markError && (
+      {actionError && (
         <p className="text-[12.5px] font-semibold text-[var(--amber)]">
-          {markError}
+          {actionError}
         </p>
       )}
       {dialogOpen && (

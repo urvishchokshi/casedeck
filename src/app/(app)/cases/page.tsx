@@ -36,7 +36,6 @@ interface FacetRow {
 
 interface ProgressInfo {
   outcome: CaseOutcome | null;
-  marked_for_later: boolean;
 }
 
 const thClasses =
@@ -59,15 +58,10 @@ function OutcomePill({ outcome }: { outcome: CaseOutcome | null | undefined }) {
 }
 
 function StatusPills({ progress }: { progress: ProgressInfo | undefined }) {
-  if (!progress || (progress.outcome === null && !progress.marked_for_later)) {
+  if (!progress || progress.outcome === null) {
     return <span className="text-[var(--muted)]">—</span>;
   }
-  return (
-    <span className="flex flex-wrap gap-1.5">
-      <OutcomePill outcome={progress.outcome} />
-      {progress.marked_for_later && <Pill tone="amber-outline">Marked</Pill>}
-    </span>
-  );
+  return <OutcomePill outcome={progress.outcome} />;
 }
 
 const DIFFICULTY_ORDER: readonly string[] = ["Easy", "Medium", "Hard"];
@@ -138,7 +132,7 @@ export default async function CasesPage({
     user
       ? supabase
           .from("user_case_progress")
-          .select("case_id, outcome, marked_for_later")
+          .select("case_id, outcome")
           .eq("user_id", user.id)
       : null,
   ]);
@@ -149,25 +143,18 @@ export default async function CasesPage({
   }
 
   const progressByCase = new Map<string, ProgressInfo>(
-    (progressRes?.data ?? []).map((p) => [
-      p.case_id,
-      { outcome: p.outcome, marked_for_later: p.marked_for_later },
-    ])
+    (progressRes?.data ?? []).map((p) => [p.case_id, { outcome: p.outcome }])
   );
 
   // The Status group filters in JS after the query: "not started" is the
-  // absence of a progress row, which the SQL filter can't express. On legacy
-  // URLs the outcome status ORs with the marked=1 flag; fine under the
-  // 500-row cap.
+  // absence of a progress row, which the SQL filter can't express; fine under
+  // the 500-row cap.
   const statusClauses: ((p: ProgressInfo | undefined) => boolean)[] = [];
   if (filters.status === "done") statusClauses.push((p) => p?.outcome === "done");
-  if (filters.status === "retry") statusClauses.push((p) => p?.outcome === "retry");
   if (filters.status === "revisit")
     statusClauses.push((p) => p?.outcome === "revisit");
   if (filters.status === "not_done")
     statusClauses.push((p) => (p?.outcome ?? null) === null);
-  if (filters.status === "marked" || filters.marked)
-    statusClauses.push((p) => p?.marked_for_later === true);
 
   const cases = ((casesRes.data ?? []) as unknown as CaseListRow[])
     .filter(
@@ -381,9 +368,6 @@ export default async function CasesPage({
                   {c.difficulty && <Pill>{c.difficulty}</Pill>}
                   <RatingPill avg={c.avg_rating} count={c.rating_count} />
                   <OutcomePill outcome={progressByCase.get(c.id)?.outcome} />
-                  {progressByCase.get(c.id)?.marked_for_later && (
-                    <Pill tone="amber-outline">Marked</Pill>
-                  )}
                 </div>
               </Link>
             ))}

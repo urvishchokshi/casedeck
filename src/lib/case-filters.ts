@@ -3,22 +3,15 @@ import type { DifficultyLevel } from "@/lib/types";
 /**
  * URL search params are the single source of truth for the /cases filters:
  * ?type=A&type=B&difficulty=Easy&industry=…&company=…&casebook=<slug>&rating=4
- * &status=retry&q=…
+ * &status=done&q=…
  * Multi-select within a group = OR; across groups = AND. Rating is single-select.
- * status is single-select: done/retry/revisit match the outcome exactly,
- * not_done = null outcome (missing progress row included), marked =
- * marked_for_later. `marked=1` is a legacy alias for the Marked filter; a
- * legacy URL combining status + marked=1 still ORs the two server-side.
+ * status is single-select: done/revisit match the outcome exactly, not_done =
+ * null outcome (missing progress row included). Unknown status values (incl.
+ * the retired retry/marked ones) are dropped, so stale URLs degrade to All.
  */
-export type StatusFilter = "done" | "not_done" | "retry" | "revisit" | "marked";
+export type StatusFilter = "done" | "not_done" | "revisit";
 
-const STATUS_VALUES: readonly StatusFilter[] = [
-  "done",
-  "not_done",
-  "retry",
-  "revisit",
-  "marked",
-];
+const STATUS_VALUES: readonly StatusFilter[] = ["done", "not_done", "revisit"];
 
 export interface CaseFilterState {
   types: string[];
@@ -29,7 +22,6 @@ export interface CaseFilterState {
   casebooks: string[];
   rating: 3 | 4 | null;
   status: StatusFilter | null;
-  marked: boolean;
   /** Trimmed raw query; sanitize with sanitizeSearchQuery before use in SQL. */
   q: string;
 }
@@ -76,9 +68,6 @@ export function parseCaseFilters(sp: {
     casebooks: toArray(sp.casebook),
     rating,
     status,
-    // status=marked&marked=1 is one filter, not two — drop the redundant
-    // legacy flag so it isn't double-counted or rendered as a phantom pill.
-    marked: status !== "marked" && first(sp.marked) === "1",
     q: (first(sp.q) ?? "").trim().slice(0, 100),
   };
 }
@@ -92,7 +81,6 @@ export function buildCasesSearchString(state: CaseFilterState): string {
   for (const v of state.casebooks) params.append("casebook", v);
   if (state.rating !== null) params.set("rating", String(state.rating));
   if (state.status !== null) params.set("status", state.status);
-  if (state.marked) params.set("marked", "1");
   const q = state.q.trim();
   if (q) params.set("q", q.slice(0, 100));
   const s = params.toString();
@@ -115,8 +103,8 @@ export function sanitizeSearchQuery(raw: string): string {
 
 /**
  * Filters surfaced in the bar summary and active pills: dimension values,
- * rating, and status/marked (1 each). Excludes q — the search text is
- * visible in its own input.
+ * rating, and status. Excludes q — the search text is visible in its own
+ * input.
  */
 export function countDisplayFilters(state: CaseFilterState): number {
   return (
@@ -126,7 +114,6 @@ export function countDisplayFilters(state: CaseFilterState): number {
     state.companies.length +
     state.casebooks.length +
     (state.rating !== null ? 1 : 0) +
-    (state.status !== null ? 1 : 0) +
-    (state.marked ? 1 : 0)
+    (state.status !== null ? 1 : 0)
   );
 }

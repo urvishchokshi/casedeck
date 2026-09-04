@@ -10,7 +10,6 @@ import {
   aggregateByType,
   byDifficulty,
   computeStats,
-  markedCases,
   weakestGround,
   WEAK_SCORE_THRESHOLD,
   type CaseFacet,
@@ -78,7 +77,7 @@ export default async function DashboardPage() {
       ? supabase
           .from("user_case_progress")
           .select(
-            "case_id, outcome, marked_for_later, self_score, quality_rating, completed_at, updated_at, case:cases(id, title, case_types, industry, difficulty)"
+            "case_id, outcome, self_score, quality_rating, completed_at, case:cases(id, title, case_types, industry, difficulty)"
           )
           .eq("user_id", user.id)
       : null,
@@ -99,7 +98,6 @@ export default async function DashboardPage() {
   const typeRows = aggregateByType(progress, facets);
   const industryRows = aggregateByIndustry(progress);
   const weakest = weakestGround(progress);
-  const marked = markedCases(progress);
   const difficultySegments = byDifficulty(progress, facets);
 
   const subtitle = hasAttempted
@@ -113,32 +111,19 @@ export default async function DashboardPage() {
     <div>
       <PageHeader title="Your numbers" subtitle={subtitle} />
 
-      <div className="grid grid-cols-2 gap-3.5 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3.5 xl:grid-cols-3">
         <StatCard
           label="Cases attempted"
           value={String(stats.attempted)}
           sub={`of ${stats.total}`}
           caption={
-            stats.retry > 0 || stats.revisit > 0 ? (
-              <>
-                {stats.retry > 0 && (
-                  <Link
-                    href="/cases?status=retry"
-                    className="transition-colors hover:text-[var(--ink)]"
-                  >
-                    {stats.retry} retry
-                  </Link>
-                )}
-                {stats.retry > 0 && stats.revisit > 0 && " · "}
-                {stats.revisit > 0 && (
-                  <Link
-                    href="/cases?status=revisit"
-                    className="transition-colors hover:text-[var(--ink)]"
-                  >
-                    {stats.revisit} revisit
-                  </Link>
-                )}
-              </>
+            stats.revisit > 0 ? (
+              <Link
+                href="/cases?status=revisit"
+                className="transition-colors hover:text-[var(--ink)]"
+              >
+                {stats.revisit} revisit
+              </Link>
             ) : undefined
           }
         />
@@ -146,7 +131,6 @@ export default async function DashboardPage() {
           label="Avg self-score"
           value={stats.avgSelfScore !== null ? stats.avgSelfScore.toFixed(1) : "—"}
         />
-        <StatCard label="Marked for later" value={String(stats.marked)} />
         <StatCard label="Cases rated" value={String(stats.rated)} />
       </div>
 
@@ -270,45 +254,6 @@ export default async function DashboardPage() {
                 </div>
               </Card>
             )}
-
-            <Card className="px-5 py-[18px]">
-              <h2 className="text-[22px] text-[var(--ink)]">Marked for later</h2>
-              {marked.total === 0 ? (
-                <p className="mt-3.5 text-[13px] text-[var(--muted)]">
-                  Nothing marked yet — flag cases from the library.
-                </p>
-              ) : (
-                <>
-                  <div className="mt-2 flex flex-col">
-                    {marked.cases.map((m) => (
-                      <Link
-                        key={m.id}
-                        href={`/cases/${m.id}`}
-                        className="-mx-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 rounded-[var(--rs)] px-2 py-2 transition-colors hover:bg-[var(--thead)]"
-                      >
-                        <span className="text-[14px] font-semibold text-[var(--ink)]">
-                          {m.title}
-                        </span>
-                        <span className="flex flex-wrap gap-1.5">
-                          {m.case_types.map((t, i) => (
-                            <Pill key={`type-${t}-${i}`} tone="accent">
-                              {t}
-                            </Pill>
-                          ))}
-                          {m.difficulty && <Pill>{m.difficulty}</Pill>}
-                        </span>
-                      </Link>
-                    ))}
-                  </div>
-                  <Link
-                    href="/cases?status=marked"
-                    className="mt-3 inline-block text-[13px] font-semibold text-[var(--accent)] transition-colors hover:text-[var(--accent-hover)]"
-                  >
-                    View all →
-                  </Link>
-                </>
-              )}
-            </Card>
           </div>
 
           <Card className="mt-[18px] px-5 py-[18px]">
