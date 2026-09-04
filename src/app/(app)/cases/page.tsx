@@ -3,7 +3,8 @@ import { Pill } from "@/components/ui/Pill";
 import { RatingPill } from "@/components/RatingPill";
 import { createClient } from "@/lib/supabase/server";
 import { MIN_RATINGS_TO_SHOW, shownRating } from "@/lib/rating";
-import type { DifficultyLevel } from "@/lib/types";
+import type { CaseOutcome, DifficultyLevel } from "@/lib/types";
+import { OUTCOME_META } from "@/lib/outcome";
 import {
   parseCaseFilters,
   sanitizeSearchQuery,
@@ -34,7 +35,7 @@ interface FacetRow {
 }
 
 interface ProgressInfo {
-  completed: boolean;
+  outcome: CaseOutcome | null;
   marked_for_later: boolean;
 }
 
@@ -52,14 +53,19 @@ function Rating({ c }: { c: CaseListRow }) {
   );
 }
 
+function OutcomePill({ outcome }: { outcome: CaseOutcome | null | undefined }) {
+  if (outcome == null) return null;
+  return <Pill tone={OUTCOME_META[outcome].tone}>{OUTCOME_META[outcome].pill}</Pill>;
+}
+
 function StatusPills({ progress }: { progress: ProgressInfo | undefined }) {
-  if (!progress || (!progress.completed && !progress.marked_for_later)) {
+  if (!progress || (progress.outcome === null && !progress.marked_for_later)) {
     return <span className="text-[var(--muted)]">—</span>;
   }
   return (
     <span className="flex flex-wrap gap-1.5">
-      {progress.completed && <Pill tone="accent">Done</Pill>}
-      {progress.marked_for_later && <Pill tone="amber">Marked</Pill>}
+      <OutcomePill outcome={progress.outcome} />
+      {progress.marked_for_later && <Pill tone="amber-outline">Marked</Pill>}
     </span>
   );
 }
@@ -132,7 +138,7 @@ export default async function CasesPage({
     user
       ? supabase
           .from("user_case_progress")
-          .select("case_id, completed, marked_for_later")
+          .select("case_id, outcome, marked_for_later")
           .eq("user_id", user.id)
       : null,
   ]);
@@ -145,17 +151,23 @@ export default async function CasesPage({
   const progressByCase = new Map<string, ProgressInfo>(
     (progressRes?.data ?? []).map((p) => [
       p.case_id,
-      { completed: p.completed, marked_for_later: p.marked_for_later },
+      { outcome: p.outcome, marked_for_later: p.marked_for_later },
     ])
   );
 
   // The Status group filters in JS after the query: "not started" is the
-  // absence of a progress row, which the SQL filter can't express. Selected
-  // Status chips OR together; fine under the 500-row cap.
+  // absence of a progress row, which the SQL filter can't express. On legacy
+  // URLs the outcome status ORs with the marked=1 flag; fine under the
+  // 500-row cap.
   const statusClauses: ((p: ProgressInfo | undefined) => boolean)[] = [];
-  if (filters.status === "done") statusClauses.push((p) => p?.completed === true);
-  if (filters.status === "not_done") statusClauses.push((p) => !p?.completed);
-  if (filters.marked) statusClauses.push((p) => p?.marked_for_later === true);
+  if (filters.status === "done") statusClauses.push((p) => p?.outcome === "done");
+  if (filters.status === "retry") statusClauses.push((p) => p?.outcome === "retry");
+  if (filters.status === "revisit")
+    statusClauses.push((p) => p?.outcome === "revisit");
+  if (filters.status === "not_done")
+    statusClauses.push((p) => (p?.outcome ?? null) === null);
+  if (filters.status === "marked" || filters.marked)
+    statusClauses.push((p) => p?.marked_for_later === true);
 
   const cases = ((casesRes.data ?? []) as unknown as CaseListRow[])
     .filter(
@@ -368,11 +380,9 @@ export default async function CasesPage({
                   {c.company && <Pill>{c.company}</Pill>}
                   {c.difficulty && <Pill>{c.difficulty}</Pill>}
                   <RatingPill avg={c.avg_rating} count={c.rating_count} />
-                  {progressByCase.get(c.id)?.completed && (
-                    <Pill tone="accent">Done</Pill>
-                  )}
+                  <OutcomePill outcome={progressByCase.get(c.id)?.outcome} />
                   {progressByCase.get(c.id)?.marked_for_later && (
-                    <Pill tone="amber">Marked</Pill>
+                    <Pill tone="amber-outline">Marked</Pill>
                   )}
                 </div>
               </Link>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Pill } from "@/components/ui/Pill";
@@ -22,10 +23,12 @@ function StatCard({
   label,
   value,
   sub,
+  caption,
 }: {
   label: string;
   value: string;
   sub?: string;
+  caption?: ReactNode;
 }) {
   return (
     <Card className="px-[18px] py-4">
@@ -34,6 +37,9 @@ function StatCard({
         {value}
       </p>
       {sub && <p className="mt-1 text-[11.5px] text-[var(--muted)]">{sub}</p>}
+      {caption && (
+        <p className="mt-1 text-[11.5px] text-[var(--muted)]">{caption}</p>
+      )}
     </Card>
   );
 }
@@ -72,7 +78,7 @@ export default async function DashboardPage() {
       ? supabase
           .from("user_case_progress")
           .select(
-            "case_id, completed, marked_for_later, self_score, quality_rating, completed_at, updated_at, case:cases(id, title, case_types, industry, difficulty)"
+            "case_id, outcome, marked_for_later, self_score, quality_rating, completed_at, updated_at, case:cases(id, title, case_types, industry, difficulty)"
           )
           .eq("user_id", user.id)
       : null,
@@ -89,15 +95,15 @@ export default async function DashboardPage() {
   const facets = (facetsRes.data ?? []) as unknown as CaseFacet[];
 
   const stats = computeStats(progress, facets.length);
-  const hasDone = stats.done > 0;
+  const hasAttempted = stats.attempted > 0;
   const typeRows = aggregateByType(progress, facets);
   const industryRows = aggregateByIndustry(progress);
   const weakest = weakestGround(progress);
   const marked = markedCases(progress);
   const difficultySegments = byDifficulty(progress, facets);
 
-  const subtitle = hasDone
-    ? `${stats.done} of ${stats.total} cases done` +
+  const subtitle = hasAttempted
+    ? `${stats.attempted} of ${stats.total} cases attempted` +
       (stats.lastCompletedAt !== null
         ? ` · last case ${relativeDate(stats.lastCompletedAt)}`
         : "")
@@ -109,9 +115,32 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-2 gap-3.5 xl:grid-cols-4">
         <StatCard
-          label="Cases done"
-          value={String(stats.done)}
+          label="Cases attempted"
+          value={String(stats.attempted)}
           sub={`of ${stats.total}`}
+          caption={
+            stats.retry > 0 || stats.revisit > 0 ? (
+              <>
+                {stats.retry > 0 && (
+                  <Link
+                    href="/cases?status=retry"
+                    className="transition-colors hover:text-[var(--ink)]"
+                  >
+                    {stats.retry} retry
+                  </Link>
+                )}
+                {stats.retry > 0 && stats.revisit > 0 && " · "}
+                {stats.revisit > 0 && (
+                  <Link
+                    href="/cases?status=revisit"
+                    className="transition-colors hover:text-[var(--ink)]"
+                  >
+                    {stats.revisit} revisit
+                  </Link>
+                )}
+              </>
+            ) : undefined
+          }
         />
         <StatCard
           label="Avg self-score"
@@ -121,7 +150,7 @@ export default async function DashboardPage() {
         <StatCard label="Cases rated" value={String(stats.rated)} />
       </div>
 
-      {!hasDone ? (
+      {!hasAttempted ? (
         <Card className="mt-[18px] grid place-items-center px-6 py-16 text-center">
           <div>
             <p className="text-[17px] font-semibold text-[var(--ink)]">
@@ -146,7 +175,7 @@ export default async function DashboardPage() {
               <h2 className="text-[22px] text-[var(--ink)]">Cases by type</h2>
               {typeRows.length === 0 ? (
                 <p className="mt-3.5 text-[13px] text-[var(--muted)]">
-                  No typed cases done yet.
+                  No typed cases attempted yet.
                 </p>
               ) : (
                 <div className="mt-3.5 flex flex-col gap-2.5">
@@ -158,9 +187,11 @@ export default async function DashboardPage() {
                       >
                         {r.label}
                       </span>
-                      <Bar pct={r.total > 0 ? (r.done / r.total) * 100 : 0} />
+                      <Bar
+                        pct={r.total > 0 ? (r.attempted / r.total) * 100 : 0}
+                      />
                       <span className="text-[var(--muted)]">
-                        {r.done}/{r.total}
+                        {r.attempted}/{r.total}
                       </span>
                     </div>
                   ))}
@@ -196,7 +227,7 @@ export default async function DashboardPage() {
                         </span>
                         <span className="text-[var(--muted)]">
                           {" "}
-                          · {r.done} done
+                          · {r.attempted} attempted
                         </span>
                       </span>
                     </div>
@@ -270,7 +301,7 @@ export default async function DashboardPage() {
                     ))}
                   </div>
                   <Link
-                    href="/cases?marked=1"
+                    href="/cases?status=marked"
                     className="mt-3 inline-block text-[13px] font-semibold text-[var(--accent)] transition-colors hover:text-[var(--accent-hover)]"
                   >
                     View all →
@@ -298,7 +329,7 @@ export default async function DashboardPage() {
                     {s.label}
                   </p>
                   <p className="mt-1 font-[family-name:var(--font-display)] text-[26px] leading-none text-[var(--ink)]">
-                    {s.done}
+                    {s.attempted}
                     <span className="text-[15px] text-[var(--muted)]">
                       /{s.total}
                     </span>

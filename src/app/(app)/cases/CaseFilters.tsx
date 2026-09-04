@@ -8,6 +8,7 @@ import {
   countDisplayFilters,
   type CaseFilterState,
   type FilterOption,
+  type StatusFilter,
 } from "@/lib/case-filters";
 
 export type FilterParam =
@@ -41,32 +42,36 @@ const ratingOptions: { label: string; value: 3 | 4 | null }[] = [
   { label: "4★ & up", value: 4 },
 ];
 
-// The segmented control is single-select over two URL params (status +
-// marked). A legacy URL carrying both (e.g. status=done&marked=1) still ORs
-// server-side but maps to no segment; that state renders removable Status
-// pills instead.
-type StatusSegment = "all" | "not_done" | "marked" | "done";
+// The segmented control is single-select over the status param (marked is
+// now a status value; `marked=1` is a legacy alias). A legacy URL combining
+// status + marked=1 still ORs server-side but maps to no segment; that state
+// renders removable Status pills instead.
+type StatusSegment = "all" | "not_done" | "done" | "retry" | "revisit" | "marked";
 
 const statusSegments: { label: string; value: StatusSegment }[] = [
   { label: "All", value: "all" },
   { label: "Not done", value: "not_done" },
-  { label: "Marked", value: "marked" },
   { label: "Done", value: "done" },
+  { label: "Retry", value: "retry" },
+  { label: "Revisit", value: "revisit" },
+  { label: "Marked", value: "marked" },
 ];
 
 function segmentOf(filters: CaseFilterState): StatusSegment | null {
-  if (filters.status === null && !filters.marked) return "all";
-  if (filters.status === "not_done" && !filters.marked) return "not_done";
-  if (filters.status === null && filters.marked) return "marked";
-  if (filters.status === "done" && !filters.marked) return "done";
-  return null;
+  // Legacy ?marked=1 alone still selects the Marked segment.
+  if (filters.status === null) return filters.marked ? "marked" : "all";
+  if (filters.marked) return null;
+  return filters.status;
 }
 
 const segmentState: Record<StatusSegment, Pick<CaseFilterState, "status" | "marked">> = {
   all: { status: null, marked: false },
   not_done: { status: "not_done", marked: false },
-  marked: { status: null, marked: true },
   done: { status: "done", marked: false },
+  retry: { status: "retry", marked: false },
+  revisit: { status: "revisit", marked: false },
+  // Canonical form — clicking a segment rewrites legacy marked=1 URLs.
+  marked: { status: "marked", marked: false },
 };
 
 export function CaseFilterBar({
@@ -564,10 +569,17 @@ function ActivePills({
   // segmented control — surface it as removable pills so it stays escapable.
   if (legacyCombo) {
     if (filters.status !== null) {
+      const statusLabels: Record<StatusFilter, string> = {
+        done: "Done",
+        not_done: "Not done",
+        retry: "Retry",
+        revisit: "Revisit",
+        marked: "Marked",
+      };
       pills.push({
         key: "status",
         dim: "Status",
-        value: filters.status === "done" ? "Done" : "Not done",
+        value: statusLabels[filters.status],
         remove: () => push({ status: null }),
       });
     }

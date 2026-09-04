@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { OUTCOME_ORDER } from "@/lib/outcome";
+import type { CaseOutcome } from "@/lib/types";
 
 export type ProgressActionResult = { ok: true } | { ok: false; error: string };
 
@@ -33,14 +35,19 @@ function revalidateCaseViews(caseId: string) {
   revalidatePath(`/cases/${caseId}`);
 }
 
-export async function markDone(
+export async function logCase(
   caseId: string,
+  outcome: CaseOutcome,
   qualityRating: number,
   selfScore: number
 ): Promise<ProgressActionResult> {
   const ctx = await getActionContext(caseId);
   if (!ctx.ok) return { ok: false, error: ctx.error };
-  // Both scores are required to mark done; ranges mirror the DB CHECKs.
+  if (!(OUTCOME_ORDER as readonly string[]).includes(outcome)) {
+    return { ok: false, error: "Invalid outcome." };
+  }
+  // All three outcomes are an attempt, so both scores are always required;
+  // ranges mirror the DB CHECKs.
   if (!Number.isInteger(qualityRating) || qualityRating < 1 || qualityRating > 5) {
     return { ok: false, error: "Case quality must be a rating from 1 to 5." };
   }
@@ -49,17 +56,17 @@ export async function markDone(
   }
 
   // Omitting marked_for_later keeps its current value on the update path.
-  // Writing quality_rating fires the trigger that recomputes the case's
-  // avg_rating/rating_count.
+  // Writing quality_rating/outcome fires the trigger that recomputes the
+  // case's avg_rating/rating_count.
   const { error } = await ctx.supabase.from("user_case_progress").upsert(
     {
       user_id: ctx.user.id,
       case_id: ctx.caseId,
-      completed: true,
+      outcome,
       quality_rating: qualityRating,
       self_score: selfScore,
-      // Re-saving scores refreshes this: completed_at tracks the latest log,
-      // not the first completion.
+      // Re-saving refreshes this: completed_at tracks when the outcome was
+      // last set, not the first log.
       completed_at: new Date().toISOString(),
     },
     UPSERT_KEY
@@ -70,7 +77,7 @@ export async function markDone(
   return { ok: true };
 }
 
-export async function unmarkDone(caseId: string): Promise<ProgressActionResult> {
+export async function clearOutcome(caseId: string): Promise<ProgressActionResult> {
   const ctx = await getActionContext(caseId);
   if (!ctx.ok) return { ok: false, error: ctx.error };
 
@@ -78,7 +85,7 @@ export async function unmarkDone(caseId: string): Promise<ProgressActionResult> 
     {
       user_id: ctx.user.id,
       case_id: ctx.caseId,
-      completed: false,
+      outcome: null,
       quality_rating: null,
       self_score: null,
       completed_at: null,

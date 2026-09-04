@@ -3,12 +3,22 @@ import type { DifficultyLevel } from "@/lib/types";
 /**
  * URL search params are the single source of truth for the /cases filters:
  * ?type=A&type=B&difficulty=Easy&industry=…&company=…&casebook=<slug>&rating=4
- * &status=done&marked=1&q=…
+ * &status=retry&q=…
  * Multi-select within a group = OR; across groups = AND. Rating is single-select.
- * status + marked form one Status group: selected chips OR together
- * (e.g. status=done&marked=1 → completed OR marked for later).
+ * status is single-select: done/retry/revisit match the outcome exactly,
+ * not_done = null outcome (missing progress row included), marked =
+ * marked_for_later. `marked=1` is a legacy alias for the Marked filter; a
+ * legacy URL combining status + marked=1 still ORs the two server-side.
  */
-export type StatusFilter = "done" | "not_done";
+export type StatusFilter = "done" | "not_done" | "retry" | "revisit" | "marked";
+
+const STATUS_VALUES: readonly StatusFilter[] = [
+  "done",
+  "not_done",
+  "retry",
+  "revisit",
+  "marked",
+];
 
 export interface CaseFilterState {
   types: string[];
@@ -55,8 +65,9 @@ export function parseCaseFilters(sp: {
   const ratingRaw = first(sp.rating);
   const rating = ratingRaw === "4" ? 4 : ratingRaw === "3" ? 3 : null;
   const statusRaw = first(sp.status);
-  const status =
-    statusRaw === "done" || statusRaw === "not_done" ? statusRaw : null;
+  const status = (STATUS_VALUES as readonly string[]).includes(statusRaw ?? "")
+    ? (statusRaw as StatusFilter)
+    : null;
   return {
     types: toArray(sp.type),
     difficulties,
@@ -65,7 +76,9 @@ export function parseCaseFilters(sp: {
     casebooks: toArray(sp.casebook),
     rating,
     status,
-    marked: first(sp.marked) === "1",
+    // status=marked&marked=1 is one filter, not two — drop the redundant
+    // legacy flag so it isn't double-counted or rendered as a phantom pill.
+    marked: status !== "marked" && first(sp.marked) === "1",
     q: (first(sp.q) ?? "").trim().slice(0, 100),
   };
 }

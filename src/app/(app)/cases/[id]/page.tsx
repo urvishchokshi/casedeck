@@ -60,7 +60,7 @@ export default async function CaseDetailPage({
   if (user) {
     const { data: progressRow, error: progressError } = await supabase
       .from("user_case_progress")
-      .select("completed, marked_for_later, self_score, quality_rating")
+      .select("outcome, marked_for_later, self_score, quality_rating")
       .eq("user_id", user.id)
       .eq("case_id", id)
       .maybeSingle();

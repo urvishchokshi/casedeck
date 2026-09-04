@@ -1,21 +1,22 @@
-import type { DifficultyLevel } from "@/lib/types";
+import type { CaseOutcome, DifficultyLevel } from "@/lib/types";
 
 /**
  * Pure aggregation logic for the /dashboard page. Everything operates on the
  * signed-in user's progress rows (with their case embed) plus a lightweight
  * facet list of all cases — no queries, no React.
  *
+ * "Attempted" = any non-null outcome (done, retry and revisit all count).
  * Scoring rule used throughout: a row contributes to an average only when
- * `completed && self_score !== null`. The markDone contract guarantees
- * self_score exists iff completed, but we filter defensively rather than
- * assume. "Done" counts use `completed` alone.
+ * `outcome !== null && self_score !== null`. The logCase contract guarantees
+ * self_score exists iff outcome is set, but we filter defensively rather
+ * than assume.
  */
 
 /** Label for null industry/difficulty groupings; always sorted last. */
 export const UNTAGGED = "Untagged";
 /** Max rows shown in the "Marked for later" card. */
 export const MARKED_LIMIT = 8;
-/** Minimum scored done cases for a grouping to qualify as "weakest ground". */
+/** Minimum scored attempted cases for a grouping to qualify as "weakest ground". */
 export const WEAKEST_MIN_CASES = 2;
 /** Industry bars turn amber below this average self-score. */
 export const WEAK_SCORE_THRESHOLD = 6;
@@ -30,7 +31,7 @@ export interface ProgressCaseInfo {
 
 export interface ProgressWithCase {
   case_id: string;
-  completed: boolean;
+  outcome: CaseOutcome | null;
   marked_for_later: boolean;
   self_score: number | null;
   quality_rating: number | null;
@@ -46,7 +47,9 @@ export interface CaseFacet {
 }
 
 export interface DashboardStats {
-  done: number;
+  attempted: number;
+  retry: number;
+  revisit: number;
   total: number;
   avgSelfScore: number | null;
   marked: number;
@@ -58,19 +61,21 @@ export function computeStats(
   progress: ProgressWithCase[],
   totalCases: number
 ): DashboardStats {
-  const doneRows = progress.filter((p) => p.completed);
-  const scores = doneRows
+  const attemptedRows = progress.filter((p) => p.outcome !== null);
+  const scores = attemptedRows
     .map((p) => p.self_score)
     .filter((s): s is number => s !== null);
   let lastCompletedAt: string | null = null;
-  for (const p of doneRows) {
+  for (const p of attemptedRows) {
     // ISO-8601 UTC strings compare correctly lexicographically.
     if (p.completed_at !== null && (lastCompletedAt === null || p.completed_at > lastCompletedAt)) {
       lastCompletedAt = p.completed_at;
     }
   }
   return {
-    done: doneRows.length,
+    attempted: attemptedRows.length,
+    retry: attemptedRows.filter((p) => p.outcome === "retry").length,
+    revisit: attemptedRows.filter((p) => p.outcome === "revisit").length,
     total: totalCases,
     avgSelfScore: scores.length
       ? scores.reduce((a, b) => a + b, 0) / scores.length
@@ -83,21 +88,21 @@ export function computeStats(
 
 export interface TypeBreakdown {
   label: string;
-  done: number;
+  attempted: number;
   total: number;
 }
 
-/** Types with ≥1 done case; a multi-type case counts once toward each type. */
+/** Types with ≥1 attempted case; a multi-type case counts once toward each type. */
 export function aggregateByType(
   progress: ProgressWithCase[],
   facets: CaseFacet[]
 ): TypeBreakdown[] {
-  const doneCounts = new Map<string, number>();
+  const attemptedCounts = new Map<string, number>();
   for (const p of progress) {
-    if (!p.completed || !p.case) continue;
+    if (p.outcome === null || !p.case) continue;
     // Set-dedupe: a duplicated tag within one case must not count twice.
     for (const t of new Set(p.case.case_types)) {
-      doneCounts.set(t, (doneCounts.get(t) ?? 0) + 1);
+      attemptedCounts.set(t, (attemptedCounts.get(t) ?? 0) + 1);
     }
   }
   const totals = new Map<string, number>();
@@ -106,12 +111,12 @@ export function aggregateByType(
       totals.set(t, (totals.get(t) ?? 0) + 1);
     }
   }
-  return [...doneCounts.entries()]
-    .map(([label, done]) => ({
+  return [...attemptedCounts.entries()]
+    .map(([label, attempted]) => ({
       label,
-      done,
-      // Facets sit under the PostgREST row cap; never show done > total.
-      total: Math.max(totals.get(label) ?? 0, done),
+      attempted,
+      // Facets sit under the PostgREST row cap; never show attempted > total.
+      total: Math.max(totals.get(label) ?? 0, attempted),
     }))
     .sort((a, b) => b.total - a.total || a.label.localeCompare(b.label));
 }
@@ -119,22 +124,22 @@ export function aggregateByType(
 export interface IndustryBreakdown {
   label: string;
   avg: number;
-  done: number;
+  attempted: number;
 }
 
 /**
- * Industries (null → Untagged) with ≥1 scored done case, weakest first;
+ * Industries (null → Untagged) with ≥1 scored attempted case, weakest first;
  * Untagged always last.
  */
 export function aggregateByIndustry(
   progress: ProgressWithCase[]
 ): IndustryBreakdown[] {
-  const groups = new Map<string, { scores: number[]; done: number }>();
+  const groups = new Map<string, { scores: number[]; attempted: number }>();
   for (const p of progress) {
-    if (!p.completed || !p.case) continue;
+    if (p.outcome === null || !p.case) continue;
     const label = p.case.industry ?? UNTAGGED;
-    const g = groups.get(label) ?? { scores: [], done: 0 };
-    g.done += 1;
+    const g = groups.get(label) ?? { scores: [], attempted: 0 };
+    g.attempted += 1;
     if (p.self_score !== null) g.scores.push(p.self_score);
     groups.set(label, g);
   }
@@ -143,7 +148,7 @@ export function aggregateByIndustry(
     .map(([label, g]) => ({
       label,
       avg: g.scores.reduce((a, b) => a + b, 0) / g.scores.length,
-      done: g.done,
+      attempted: g.attempted,
     }))
     .sort((a, b) => {
       if (a.label === UNTAGGED) return 1;
@@ -156,14 +161,14 @@ export interface WeakGrouping {
   label: string;
   dimension: "type" | "industry";
   avg: number;
-  done: number;
+  attempted: number;
   href: string;
 }
 
 /**
  * The ≤3 lowest-avg-self-score groupings across the type and industry
- * dimensions, each with ≥ WEAKEST_MIN_CASES scored done cases. Untagged is
- * excluded: it isn't a filterable value, so an honest "Practice →" link is
+ * dimensions, each with ≥ WEAKEST_MIN_CASES scored attempted cases. Untagged
+ * is excluded: it isn't a filterable value, so an honest "Practice →" link is
  * impossible (it still surfaces in the industry breakdown).
  */
 export function weakestGround(progress: ProgressWithCase[]): WeakGrouping[] {
@@ -182,7 +187,7 @@ export function weakestGround(progress: ProgressWithCase[]): WeakGrouping[] {
     groups.set(key, g);
   };
   for (const p of progress) {
-    if (!p.completed || p.self_score === null || !p.case) continue;
+    if (p.outcome === null || p.self_score === null || !p.case) continue;
     for (const t of new Set(p.case.case_types)) add("type", t, p.self_score);
     if (p.case.industry !== null) add("industry", p.case.industry, p.self_score);
   }
@@ -192,7 +197,7 @@ export function weakestGround(progress: ProgressWithCase[]): WeakGrouping[] {
       label: g.label,
       dimension: g.dimension,
       avg: g.scores.reduce((a, b) => a + b, 0) / g.scores.length,
-      done: g.scores.length,
+      attempted: g.scores.length,
       // The dimension name doubles as the /cases filter param (type/industry).
       href: `/cases?${g.dimension}=${encodeURIComponent(g.label)}&status=not_done`,
     }))
@@ -236,7 +241,7 @@ export function markedCases(progress: ProgressWithCase[]): {
 
 export interface DifficultySegment {
   label: string;
-  done: number;
+  attempted: number;
   total: number;
   avg: number | null;
 }
@@ -253,15 +258,15 @@ export function byDifficulty(
   return labels.map((label) => {
     const matches = (d: DifficultyLevel | null) =>
       label === UNTAGGED ? d === null : d === label;
-    const doneRows = progress.filter(
-      (p) => p.completed && p.case !== null && matches(p.case.difficulty)
+    const attemptedRows = progress.filter(
+      (p) => p.outcome !== null && p.case !== null && matches(p.case.difficulty)
     );
-    const scores = doneRows
+    const scores = attemptedRows
       .map((p) => p.self_score)
       .filter((s): s is number => s !== null);
     return {
       label,
-      done: doneRows.length,
+      attempted: attemptedRows.length,
       total: facets.filter((f) => matches(f.difficulty)).length,
       avg: scores.length
         ? scores.reduce((a, b) => a + b, 0) / scores.length

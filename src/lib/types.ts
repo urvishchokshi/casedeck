@@ -2,6 +2,7 @@
 // Single source of truth for row shapes across the app.
 
 export type DifficultyLevel = "Easy" | "Medium" | "Hard";
+export type CaseOutcome = "done" | "retry" | "revisit";
 export type PartnerStatus = "available" | "busy";
 export type ModePref = "online" | "offline" | "both";
 export type CampusType = "Hyderabad" | "Mohali";
@@ -59,10 +60,12 @@ export interface UserCaseProgress {
   id: string;
   user_id: string;
   case_id: string;
-  completed: boolean;
+  /** null = not logged; all three outcomes are an attempt. */
+  outcome: CaseOutcome | null;
   marked_for_later: boolean;
   self_score: number | null;
   quality_rating: number | null;
+  /** When the outcome was last set; null when outcome is null. */
   completed_at: string | null;
   updated_at: string;
 }
