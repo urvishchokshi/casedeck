@@ -44,6 +44,7 @@ yarn-error.log*
 !/pipeline/chunks/.gitkeep
 /pipeline/inbox/*
 !/pipeline/inbox/.gitkeep
+/pipeline/tags/current.json
 
 # typescript
 *.tsbuildinfo

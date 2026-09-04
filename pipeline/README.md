@@ -12,6 +12,8 @@ pipeline/
   source/        # <slug>.pdf original casebooks                 (gitignored)
   chunks/        # <slug>/chunk-NN_*.pdf + manifest.json         (gitignored, generated)
   inbox/         # <slug>/*.json extraction results from chats   (gitignored)
+  tags/          # mapping.json cumulative tag-merge mapping      (versioned)
+                 # current.json exported tag snapshot             (gitignored, generated)
 ```
 
 ## Page-number convention
@@ -38,6 +40,17 @@ The later import script uses this to render solution/exhibit screenshots from th
 
 4. **Extract** — create a claude.ai Project with `prompts/extraction.md` (below the divider) as its Project instructions. For each chunk: new chat, attach the chunk PDF, save the returned JSON array to `inbox/<slug>/<chunk-file-name>.json`. If a response cuts off, reply "continue".
 5. **Import** — the import script (next phase) reads the inbox + manifest, renders solution/exhibit screenshots from the source PDF via the printed-page offset, and upserts into Supabase.
+
+## Tag cleanup (as needed, across all books)
+
+Tags are extracted **verbatim**, so the filter lists fragment over time ("E-Commerce" / "E-commerce", "McKinsey" / "McKinsey Buddy Case"). Cleanup is manual and user-triggered — never automatic during import:
+
+1. `npm run tags-export` — writes `tags/current.json` and prints a paste-ready block of distinct `industry` / `case_types` / `company` values with counts (plus the existing mapping, when one exists).
+2. Paste `prompts/tag-cleanup.md` (below its divider) + the exported block(s) into a claude.ai chat; save the returned JSON to `tags/mapping.json`.
+3. `npm run tags-apply -- --dry` — previews per-entry affected-row counts without writing.
+4. `npm run tags-apply` — applies the mapping (scalar UPDATEs for industry/company; in-array replace + dedup for case_types; a `null` target clears the field / removes the element). Idempotent — re-runs report zeros; keys that match nothing warn, never fail.
+
+`mapping.json` is **cumulative**: each cleanup round feeds it back into the chat and saves the full old+new mapping, so canonical choices stay stable across rounds. It is versioned in git; `current.json` is a regenerable snapshot and is not.
 
 ## Plan schema (`plans/<slug>.json`)
 

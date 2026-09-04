@@ -10,7 +10,9 @@
     "split": "tsx scripts/pipeline/split.mts",
     "import": "tsx scripts/pipeline/import.mts",
     "upload-book": "tsx scripts/pipeline/upload-book.mts",
-    "import-frameworks": "tsx scripts/pipeline/import-frameworks.mts"
+    "import-frameworks": "tsx scripts/pipeline/import-frameworks.mts",
+    "tags-export": "tsx scripts/pipeline/tags.mts export",
+    "tags-apply": "tsx scripts/pipeline/tags.mts apply"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",
