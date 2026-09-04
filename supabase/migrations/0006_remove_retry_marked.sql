@@ -12,13 +12,23 @@ set outcome = null,
     completed_at = null
 where outcome = 'retry';
 
--- 2. Rebuild the enum without 'retry'.
+-- 2. Rebuild the enum without 'retry'. The recompute_case_rating trigger is
+--    declared with "update of ... outcome", so Postgres refuses to retype the
+--    column while it exists — drop it around the rebuild and recreate it
+--    verbatim (0005's definition) after.
+drop trigger if exists recompute_case_rating on public.user_case_progress;
+
 create type public.case_outcome_new as enum ('done', 'revisit');
 alter table public.user_case_progress
   alter column outcome type public.case_outcome_new
   using outcome::text::public.case_outcome_new;
 drop type public.case_outcome;
 alter type public.case_outcome_new rename to case_outcome;
+
+create trigger recompute_case_rating
+  after insert or delete or update of quality_rating, outcome, case_id
+  on public.user_case_progress
+  for each row execute function public.recompute_case_rating();
 
 -- 3. Drop mark-for-later.
 alter table public.user_case_progress
