@@ -126,9 +126,11 @@ function ToggleIcon({ collapsed }: { collapsed: boolean }) {
 function NavLinks({
   counts,
   collapsed,
+  animateWidth,
 }: {
   counts: ShellCounts;
   collapsed: boolean;
+  animateWidth: boolean;
 }) {
   const pathname = usePathname();
   // Labels/badges collapse away only on desktop; the mobile top row always
@@ -149,7 +151,11 @@ function NavLinks({
             href={href}
             title={label}
             aria-current={active ? "page" : undefined}
-            className={`flex h-[42px] flex-none items-center gap-[11px] rounded-xl px-3 text-[13.5px] transition-colors ${
+            className={`flex h-[42px] flex-none items-center gap-[11px] overflow-hidden rounded-xl px-3 text-[13.5px] ${
+              animateWidth
+                ? "transition-[width,color,background-color] desk:duration-[var(--t-slow)] desk:[transition-timing-function:var(--ease-in-out)]"
+                : "transition-colors"
+            } ${
               collapsed
                 ? "desk:w-[42px] desk:justify-center desk:px-0"
                 : "desk:w-full desk:px-[13px]"
@@ -252,14 +258,19 @@ export function AppShell({
   // Default expanded so SSR and first client render agree; the stored
   // preference applies after mount.
   const [collapsed, setCollapsed] = useState(false);
+  // Width transitions are enabled only once the user toggles, so the
+  // localStorage-driven collapse on mount stays instant (no glide on load).
+  const [animateWidth, setAnimateWidth] = useState(false);
   useEffect(() => {
     if (window.localStorage.getItem(COLLAPSE_KEY) === "1") setCollapsed(true);
   }, []);
-  const toggle = () =>
+  const toggle = () => {
+    setAnimateWidth(true);
     setCollapsed((c) => {
       window.localStorage.setItem(COLLAPSE_KEY, c ? "0" : "1");
       return !c;
     });
+  };
 
   return (
     <div
@@ -270,6 +281,10 @@ export function AppShell({
         <aside
           className={`flex w-full flex-none flex-row items-center gap-2.5 overflow-x-auto desk:flex-col desk:items-stretch desk:gap-[18px] desk:overflow-visible ${
             collapsed ? "desk:w-[72px]" : "desk:w-[250px]"
+          } ${
+            animateWidth
+              ? "desk:transition-[width] desk:duration-[var(--t-slow)] desk:[transition-timing-function:var(--ease-in-out)]"
+              : ""
           }`}
         >
           <div
@@ -295,7 +310,11 @@ export function AppShell({
             </button>
           </div>
 
-          <NavLinks counts={counts} collapsed={collapsed} />
+          <NavLinks
+            counts={counts}
+            collapsed={collapsed}
+            animateWidth={animateWidth}
+          />
 
           <ProfileCard user={user} collapsed={collapsed} />
         </aside>

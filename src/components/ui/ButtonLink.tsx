@@ -18,7 +18,7 @@ export function ButtonLink({
 }: ButtonLinkProps) {
   return (
     <a
-      className={`${buttonBaseClasses} ${buttonVariantClasses[variant]} ${className}`}
+      className={`${buttonBaseClasses} active:scale-[0.97] ${buttonVariantClasses[variant]} ${className}`}
       {...props}
     />
   );

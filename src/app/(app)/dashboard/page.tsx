@@ -55,7 +55,7 @@ function Bar({ pct }: { pct: number }) {
   return (
     <div className="h-2 flex-1 overflow-hidden rounded-[5px] bg-[var(--bar-track)]">
       <div
-        className="h-2 rounded-[5px] bg-[var(--accent)]"
+        className="cd-grow h-2 rounded-[5px] bg-[var(--accent)]"
         // Dynamic widths can't be Tailwind classes.
         style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
       />
@@ -100,7 +100,9 @@ export default async function DashboardPage() {
   const difficultySegments = byDifficulty(progress, facets);
 
   return (
-    <>
+    // Matches the shell <main>'s flex column so the fade-up wrapper is
+    // layout-neutral.
+    <div className="cd-fade-up flex flex-col gap-4">
       <PageTitle plain="Your " accent="numbers" />
 
       <div className="flex flex-col items-center gap-0.5">
@@ -156,7 +158,7 @@ export default async function DashboardPage() {
             </p>
             <Link
               href="/cases"
-              className="mt-4 inline-flex h-[38px] items-center justify-center rounded-[var(--rs)] bg-[var(--accent)] px-4 text-[12.5px] font-semibold text-[var(--on-accent)] transition-colors hover:bg-[var(--accent-hover)]"
+              className="mt-4 inline-flex h-[38px] items-center justify-center rounded-[var(--rs)] bg-[var(--accent)] px-4 text-[12.5px] font-semibold text-[var(--on-accent)] transition-[color,background-color,transform] active:scale-[0.97] hover:bg-[var(--accent-hover)]"
             >
               Browse cases
             </Link>
@@ -252,7 +254,7 @@ export default async function DashboardPage() {
                     </span>
                     <Link
                       href={w.href}
-                      className="inline-flex h-9 items-center whitespace-nowrap rounded-[var(--rs)] border border-[var(--line-ctl)] bg-[var(--card)] px-4 text-[12.5px] font-semibold text-[var(--accent)] transition-colors hover:border-[var(--accent)]"
+                      className="inline-flex h-9 items-center whitespace-nowrap rounded-[var(--rs)] border border-[var(--line-ctl)] bg-[var(--card)] px-4 text-[12.5px] font-semibold text-[var(--accent)] transition-[color,background-color,border-color,transform] active:scale-[0.97] hover:border-[var(--accent)]"
                     >
                       Practice →
                     </Link>
@@ -296,6 +298,6 @@ export default async function DashboardPage() {
           </div>
         </>
       )}
-    </>
+    </div>
   );
 }

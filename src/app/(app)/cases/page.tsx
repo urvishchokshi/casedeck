@@ -209,7 +209,9 @@ export default async function CasesPage({
   ].filter((group) => group.options.length > 0);
 
   return (
-    <>
+    // Matches the shell <main>'s flex column so the fade-up wrapper is
+    // layout-neutral.
+    <div className="cd-fade-up flex flex-col gap-4">
       <PageTitle plain="Case " accent="Library" />
 
       <CaseFilterBar
@@ -252,6 +254,6 @@ export default async function CasesPage({
           <CaseTable key={buildCasesSearchString(filters)} rows={rows} />
         )}
       </CaseFilterBar>
-    </>
+    </div>
   );
 }

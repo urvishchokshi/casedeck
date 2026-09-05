@@ -67,7 +67,7 @@ export default async function LoginPage({
         />
       </header>
 
-      <main className="relative flex flex-1 flex-col items-center justify-center px-[clamp(16px,5vw,32px)] pb-[clamp(60px,12vw,110px)] pt-[clamp(24px,6vw,40px)] text-center">
+      <main className="cd-fade-up relative flex flex-1 flex-col items-center justify-center px-[clamp(16px,5vw,32px)] pb-[clamp(60px,12vw,110px)] pt-[clamp(24px,6vw,40px)] text-center">
         <h1 className="max-w-[1080px] text-[clamp(34px,8.5vw,82px)] font-extrabold leading-[1.04] tracking-[-0.04em] [text-wrap:balance]">
           Every casebook,
           <br />

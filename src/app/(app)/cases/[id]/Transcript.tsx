@@ -14,13 +14,13 @@ export function Transcript({ turns }: { turns: TranscriptTurn[] }) {
           type="button"
           onClick={() => setOpen((prev) => !prev)}
           aria-expanded={open}
-          className="h-8 whitespace-nowrap rounded-[9px] border border-[var(--line-ctl)] bg-[var(--card)] px-[13px] text-[12.5px] font-semibold text-[var(--accent)] transition-colors hover:border-[var(--accent)]"
+          className="h-8 whitespace-nowrap rounded-[9px] border border-[var(--line-ctl)] bg-[var(--card)] px-[13px] text-[12.5px] font-semibold text-[var(--accent)] transition-[color,background-color,border-color,transform] active:scale-[0.97] hover:border-[var(--accent)]"
         >
           {open ? "Collapse" : "Expand"}
         </button>
       </div>
       {open ? (
-        <div className="flex flex-col gap-1.5 rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] px-[22px] py-5 [box-shadow:var(--sh)] max-desk:px-4">
+        <div className="cd-fade-in flex flex-col gap-1.5 rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] px-[22px] py-5 [box-shadow:var(--sh)] max-desk:px-4">
           {turns.map((turn, i) =>
             turn.speaker === "interviewer" ? (
               <div
@@ -50,7 +50,7 @@ export function Transcript({ turns }: { turns: TranscriptTurn[] }) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="w-full rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] px-6 py-4 text-left text-[13.5px] font-semibold text-[var(--muted)] transition-colors [box-shadow:var(--sh)] hover:bg-[var(--row-hover)]"
+          className="cd-fade-in w-full rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] px-6 py-4 text-left text-[13.5px] font-semibold text-[var(--muted)] transition-colors [box-shadow:var(--sh)] hover:bg-[var(--row-hover)]"
         >
           {turns.length} {turns.length === 1 ? "turn" : "turns"} · click to
           expand

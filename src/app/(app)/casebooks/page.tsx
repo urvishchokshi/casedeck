@@ -60,7 +60,9 @@ export default async function CasebooksPage() {
   }
 
   return (
-    <>
+    // Matches the shell <main>'s flex column so the fade-up wrapper is
+    // layout-neutral.
+    <div className="cd-fade-up flex flex-col gap-4">
       <PageTitle plain="Case" accent="books" />
 
       <div className="flex flex-col rounded-[20px] border border-[var(--tint-border)] bg-[var(--tint)] p-1.5">
@@ -141,6 +143,6 @@ export default async function CasebooksPage() {
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }

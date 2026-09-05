@@ -4,6 +4,9 @@
   /* The design's single responsive switch: sidebar shell + table layouts all
      flip at 900px (desk: = desktop). */
   --breakpoint-desk: 900px;
+  /* House timing for every Tailwind transition-* utility. */
+  --default-transition-duration: 160ms;
+  --default-transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 /*
@@ -117,6 +120,13 @@
     rgba(37, 71, 245, 0.11),
     transparent 68%
   );
+
+  /* Motion */
+  --t-fast: 120ms; /* presses, chevrons */
+  --t-med: 180ms; /* popovers, dialogs, fades */
+  --t-slow: 240ms; /* sidebar width, bar fills, page fades */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1); /* decisive settle */
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 body {
@@ -202,13 +212,73 @@ a:focus-visible {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .skeleton {
-    animation: none;
-    background: var(--bar-track);
+/* Mount-entrance animations (fill-mode: both, so elements land at their end
+   state even under reduced motion). Applied to conditionally rendered UI —
+   exit animations are deliberately out of scope (instant close = snappy). */
+.cd-pop-in {
+  animation: cd-pop-in var(--t-med) var(--ease-out) both;
+}
+
+@keyframes cd-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
   }
-  .cd-pulse,
-  .cd-drift {
-    animation: none;
+}
+
+.cd-fade-up {
+  animation: cd-fade-up var(--t-slow) var(--ease-out) both;
+}
+
+@keyframes cd-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.cd-fade-in {
+  animation: cd-fade-in var(--t-med) var(--ease-out) both;
+}
+
+@keyframes cd-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Dialog panels — transform only; opacity comes from the fading backdrop. */
+.cd-scale-in {
+  animation: cd-scale-in var(--t-med) var(--ease-out) both;
+}
+
+@keyframes cd-scale-in {
+  from {
+    transform: scale(0.96);
+  }
+}
+
+/* Bar fills — a from-only keyframe animates 0 → the element's inline width,
+   so server-rendered bars animate without becoming client components. */
+.cd-grow {
+  animation: cd-grow var(--t-slow) var(--ease-out) both;
+}
+
+@keyframes cd-grow {
+  from {
+    width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .skeleton {
+    background: var(--bar-track);
   }
 }

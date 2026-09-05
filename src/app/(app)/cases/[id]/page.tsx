@@ -103,11 +103,13 @@ export default async function CaseDetailPage({
   const [titleLead, titleLast] = splitTitle(c.title);
 
   return (
-    <>
+    // Matches the shell <main>'s flex column so the fade-up wrapper is
+    // layout-neutral.
+    <div className="cd-fade-up flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/cases"
-          className="flex h-9 items-center gap-2 whitespace-nowrap rounded-[var(--rs)] border border-[var(--line-ctl)] bg-[var(--card)] px-3.5 text-[12.5px] font-semibold text-[var(--slate)] transition-colors hover:border-[var(--line-hover)] hover:text-[var(--accent)]"
+          className="flex h-9 items-center gap-2 whitespace-nowrap rounded-[var(--rs)] border border-[var(--line-ctl)] bg-[var(--card)] px-3.5 text-[12.5px] font-semibold text-[var(--slate)] transition-[color,background-color,border-color,transform] active:scale-[0.97] hover:border-[var(--line-hover)] hover:text-[var(--accent)]"
         >
           ← Case library
         </Link>
@@ -194,6 +196,6 @@ export default async function CaseDetailPage({
           </section>
         )}
       </div>
-    </>
+    </div>
   );
 }

@@ -44,6 +44,9 @@ function Dash() {
 
 export function CaseTable({ rows }: { rows: CaseTableRow[] }) {
   const [visible, setVisible] = useState(PAGE_SIZE);
+  // First index of the most recent Load-more batch; those rows fade in on
+  // mount (null until the first click, so the initial page renders instantly).
+  const [animateFrom, setAnimateFrom] = useState<number | null>(null);
   const shown = rows.slice(0, visible);
   const allShown = shown.length >= rows.length;
 
@@ -63,11 +66,13 @@ export function CaseTable({ rows }: { rows: CaseTableRow[] }) {
           <div className="text-right">Status</div>
         </div>
 
-        {shown.map((r) => (
+        {shown.map((r, i) => (
           <Link
             key={r.id}
             href={`/cases/${r.id}`}
-            className={`block border-b border-[var(--line-row)] px-4 py-[13px] text-[var(--ink)] transition-colors hover:bg-[var(--row-hover)] max-desk:flex max-desk:flex-col max-desk:gap-1.5 ${gridCols}`}
+            className={`block border-b border-[var(--line-row)] px-4 py-[13px] text-[var(--ink)] transition-colors hover:bg-[var(--row-hover)] max-desk:flex max-desk:flex-col max-desk:gap-1.5 ${
+              animateFrom !== null && i >= animateFrom ? "cd-fade-in " : ""
+            }${gridCols}`}
           >
             <div className="min-w-0">
               <div className="truncate text-[14px] font-semibold tracking-[-0.005em]">
@@ -99,7 +104,7 @@ export function CaseTable({ rows }: { rows: CaseTableRow[] }) {
                 <>
                   <span className="h-1 w-[34px] flex-none overflow-hidden rounded-[3px] bg-[var(--bar-track-sm)]">
                     <span
-                      className="block h-1 rounded-[3px] bg-[var(--accent)]"
+                      className="cd-grow block h-1 rounded-[3px] bg-[var(--accent)]"
                       style={{ width: DIFFICULTY_WIDTH[r.difficulty] }}
                     />
                   </span>
@@ -131,8 +136,11 @@ export function CaseTable({ rows }: { rows: CaseTableRow[] }) {
         {!allShown && (
           <button
             type="button"
-            onClick={() => setVisible((v) => v + PAGE_SIZE)}
-            className="h-[34px] whitespace-nowrap rounded-[var(--rs)] border border-[var(--line-ctl)] bg-[var(--card)] px-4 text-[12.5px] font-semibold text-[var(--slate)] transition-colors hover:border-[var(--line-hover)]"
+            onClick={() => {
+              setAnimateFrom(visible);
+              setVisible(visible + PAGE_SIZE);
+            }}
+            className="h-[34px] whitespace-nowrap rounded-[var(--rs)] border border-[var(--line-ctl)] bg-[var(--card)] px-4 text-[12.5px] font-semibold text-[var(--slate)] transition-[color,background-color,border-color,transform] active:scale-[0.97] hover:border-[var(--line-hover)]"
           >
             Load more
           </button>

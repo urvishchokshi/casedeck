@@ -8,7 +8,9 @@ export const metadata: Metadata = {
 
 export default function FrameworksPage() {
   return (
-    <>
+    // Matches the shell <main>'s flex column (incl. flex-1 — ComingSoon
+    // centers itself in the leftover height) so the wrapper is layout-neutral.
+    <div className="cd-fade-up flex flex-1 flex-col gap-4">
       <PageTitle plain="Frame" accent="works" />
       <ComingSoon
         heading="A library of reusable structures"
@@ -22,6 +24,6 @@ export default function FrameworksPage() {
           </svg>
         }
       />
-    </>
+    </div>
   );
 }

@@ -8,7 +8,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 // Exported so ButtonLink can render an anchor with identical styling.
 export const buttonBaseClasses =
-  "inline-flex h-[38px] items-center justify-center gap-2 whitespace-nowrap rounded-[var(--rs)] px-4 text-[12.5px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex h-[38px] items-center justify-center gap-2 whitespace-nowrap rounded-[var(--rs)] px-4 text-[12.5px] font-semibold transition-[color,background-color,border-color,opacity,transform] enabled:active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50";
 
 export const buttonVariantClasses: Record<ButtonVariant, string> = {
   primary:

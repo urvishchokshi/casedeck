@@ -28,7 +28,7 @@ export function SignInButton() {
       type="button"
       onClick={signIn}
       disabled={loading}
-      className="mt-[38px] flex h-14 items-center gap-[11px] whitespace-nowrap rounded-[14px] bg-[var(--accent)] px-[30px] text-[15px] font-semibold text-[var(--on-accent)] transition-colors [box-shadow:var(--sh-cta)] hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+      className="mt-[38px] flex h-14 items-center gap-[11px] whitespace-nowrap rounded-[14px] bg-[var(--accent)] px-[30px] text-[15px] font-semibold text-[var(--on-accent)] transition-[color,background-color,opacity,transform] enabled:active:scale-[0.97] [box-shadow:var(--sh-cta)] hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:opacity-60"
     >
       <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden>
         <path

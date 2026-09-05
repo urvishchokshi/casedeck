@@ -122,9 +122,10 @@ export function MyMatchCard({ profile }: { profile: MatchProfile | null }) {
   );
 }
 
-const chipBase = "rounded-[9px] px-3 py-[7px] text-[12.5px] font-semibold";
+const chipBase =
+  "rounded-[9px] px-3 py-[7px] text-[12.5px] font-semibold transition-colors";
 const chipSelected = `${chipBase} bg-[var(--accent)] text-[var(--on-accent)]`;
-const chipUnselected = `${chipBase} border border-[var(--line-ctl)] bg-[var(--card)] text-[var(--slate)] transition-colors hover:border-[var(--line-hover)]`;
+const chipUnselected = `${chipBase} border border-[var(--line-ctl)] bg-[var(--card)] text-[var(--slate)] hover:border-[var(--line-hover)]`;
 
 function Segmented<T extends string>({
   options,
@@ -392,7 +393,7 @@ function RemoveCardDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-[var(--overlay)] p-6 backdrop-blur-[2px]"
+      className="cd-fade-in fixed inset-0 z-50 grid place-items-center bg-[var(--overlay)] p-6 backdrop-blur-[2px]"
       onClick={closeUnlessPending}
     >
       <div
@@ -402,7 +403,7 @@ function RemoveCardDialog({ onClose }: { onClose: () => void }) {
         aria-modal="true"
         aria-label="Remove your card"
         onClick={(e) => e.stopPropagation()}
-        className="flex w-[440px] max-w-full flex-col gap-5 rounded-[var(--r-modal)] bg-[var(--card)] p-[26px] outline-none [box-shadow:var(--sh-modal)]"
+        className="cd-scale-in flex w-[440px] max-w-full flex-col gap-5 rounded-[var(--r-modal)] bg-[var(--card)] p-[26px] outline-none [box-shadow:var(--sh-modal)]"
       >
         <div>
           <h3 className="mb-1 text-[24px] tracking-[-0.02em]">

@@ -8,7 +8,9 @@ export const metadata: Metadata = {
 
 export default function GuesstimatesPage() {
   return (
-    <>
+    // Matches the shell <main>'s flex column (incl. flex-1 — ComingSoon
+    // centers itself in the leftover height) so the wrapper is layout-neutral.
+    <div className="cd-fade-up flex flex-1 flex-col gap-4">
       <PageTitle plain="Guess" accent="timates" />
       <ComingSoon
         heading="Market sizing, one estimate at a time"
@@ -25,6 +27,6 @@ export default function GuesstimatesPage() {
           </svg>
         }
       />
-    </>
+    </div>
   );
 }

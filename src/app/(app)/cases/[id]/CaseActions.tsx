@@ -46,7 +46,7 @@ export function CaseActions({
           onClick={() =>
             outcome === "done" ? unmark() : setDialogOutcome("done")
           }
-          className={`flex h-[38px] items-center gap-2 whitespace-nowrap rounded-[11px] px-4 text-[12.5px] font-semibold transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 ${
+          className={`flex h-[38px] items-center gap-2 whitespace-nowrap rounded-[11px] px-4 text-[12.5px] font-semibold transition-[opacity,transform] enabled:active:scale-[0.97] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 ${
             outcome === "done"
               ? "bg-[var(--done-bg)] text-[var(--done-fg)]"
               : "bg-[var(--accent)] text-[var(--on-accent)] [box-shadow:var(--sh-accent)]"
@@ -70,7 +70,7 @@ export function CaseActions({
           onClick={() =>
             outcome === "revisit" ? unmark() : setDialogOutcome("revisit")
           }
-          className={`h-[38px] whitespace-nowrap rounded-[11px] border px-4 text-[12.5px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+          className={`h-[38px] whitespace-nowrap rounded-[11px] border px-4 text-[12.5px] font-semibold transition-[color,background-color,border-color,opacity,transform] enabled:active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 ${
             outcome === "revisit"
               ? "border-[var(--revisit-border)] bg-[var(--revisit-bg)] text-[var(--revisit-fg)] hover:border-[var(--revisit-dot)]"
               : "border-[var(--line-ctl)] bg-[var(--card)] text-[var(--slate)] hover:border-[var(--revisit-dot)]"
@@ -84,7 +84,7 @@ export function CaseActions({
             type="button"
             disabled={unmarkPending}
             onClick={() => setDialogOutcome(outcome)}
-            className="h-[38px] whitespace-nowrap rounded-[11px] border border-[var(--line-ctl)] bg-[var(--card)] px-4 text-[12.5px] font-semibold text-[var(--slate)] transition-colors hover:border-[var(--line-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-[38px] whitespace-nowrap rounded-[11px] border border-[var(--line-ctl)] bg-[var(--card)] px-4 text-[12.5px] font-semibold text-[var(--slate)] transition-[color,background-color,border-color,opacity,transform] enabled:active:scale-[0.97] hover:border-[var(--line-hover)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             Edit
           </button>
@@ -164,7 +164,7 @@ function LogCaseDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-[var(--overlay)] p-6 backdrop-blur-[2px]"
+      className="cd-fade-in fixed inset-0 z-50 grid place-items-center bg-[var(--overlay)] p-6 backdrop-blur-[2px]"
       onClick={closeUnlessPending}
     >
       <div
@@ -174,7 +174,7 @@ function LogCaseDialog({
         aria-modal="true"
         aria-label="Log this case"
         onClick={(e) => e.stopPropagation()}
-        className="flex w-[440px] max-w-full flex-col gap-5 rounded-[var(--r-modal)] bg-[var(--card)] p-[26px] outline-none [box-shadow:var(--sh-modal)]"
+        className="cd-scale-in flex w-[440px] max-w-full flex-col gap-5 rounded-[var(--r-modal)] bg-[var(--card)] p-[26px] outline-none [box-shadow:var(--sh-modal)]"
       >
         <div>
           <h3 className="mb-1 text-[24px] tracking-[-0.02em]">
@@ -196,10 +196,10 @@ function LogCaseDialog({
                 type="button"
                 aria-pressed={outcome === o}
                 onClick={() => setOutcome(o)}
-                className={`whitespace-nowrap rounded-[9px] border px-3 py-[7px] text-[12.5px] font-semibold ${
+                className={`whitespace-nowrap rounded-[9px] border px-3 py-[7px] text-[12.5px] font-semibold transition-colors ${
                   outcome === o
                     ? "border-[var(--accent)] bg-[var(--accent-tint)] text-[var(--accent)]"
-                    : "border-[var(--line-ctl)] bg-[var(--card)] text-[var(--muted)] transition-colors hover:text-[var(--ink)]"
+                    : "border-[var(--line-ctl)] bg-[var(--card)] text-[var(--muted)] hover:text-[var(--ink)]"
                 }`}
               >
                 {OUTCOME_META[o].option}
@@ -220,10 +220,10 @@ function LogCaseDialog({
                 aria-pressed={quality === n}
                 aria-label={`${n} star${n === 1 ? "" : "s"}`}
                 onClick={() => setQuality(n)}
-                className={`whitespace-nowrap rounded-[9px] border px-2.5 py-[7px] text-[13px] ${
+                className={`whitespace-nowrap rounded-[9px] border px-2.5 py-[7px] text-[13px] transition-colors ${
                   quality === n
                     ? "border-[var(--revisit-border)] bg-[var(--revisit-bg)] text-[var(--revisit-fg)]"
-                    : "border-[var(--line-ctl)] bg-[var(--card)] text-[var(--dash)] transition-colors hover:text-[var(--revisit-fg)]"
+                    : "border-[var(--line-ctl)] bg-[var(--card)] text-[var(--dash)] hover:text-[var(--revisit-fg)]"
                 }`}
               >
                 {"★".repeat(n)}
@@ -243,10 +243,10 @@ function LogCaseDialog({
                 type="button"
                 aria-pressed={score === n}
                 onClick={() => setScore(n)}
-                className={`h-[33px] w-[33px] rounded-[9px] border text-[13px] font-semibold ${
+                className={`h-[33px] w-[33px] rounded-[9px] border text-[13px] font-semibold transition-colors ${
                   score === n
                     ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--on-accent)]"
-                    : "border-[var(--line-ctl)] bg-[var(--card)] text-[var(--ink)] transition-colors hover:bg-[var(--thead)]"
+                    : "border-[var(--line-ctl)] bg-[var(--card)] text-[var(--ink)] hover:bg-[var(--thead)]"
                 }`}
               >
                 {n}

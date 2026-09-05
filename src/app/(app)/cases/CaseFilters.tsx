@@ -408,14 +408,14 @@ function FilterDropdown(props: FilterDropdownProps) {
         )}
         <ChevronDown
           size={13}
-          className={`text-[var(--faint)] transition-transform ${open ? "rotate-180" : ""}`}
+          className={`text-[var(--faint)] transition-transform duration-[var(--t-fast)] ${open ? "rotate-180" : ""}`}
         />
       </button>
 
       {open && (
         <div
           onKeyDown={onPanelKeyDown}
-          className="absolute left-0 top-[calc(100%+6px)] z-30 flex max-h-[320px] w-[280px] flex-col rounded-[14px] border border-[var(--line)] bg-[var(--card)] p-1.5 [box-shadow:var(--sh-modal)] max-desk:static max-desk:order-last max-desk:w-full"
+          className="cd-pop-in absolute left-0 top-[calc(100%+6px)] z-30 flex max-h-[320px] w-[280px] flex-col rounded-[14px] border border-[var(--line)] bg-[var(--card)] p-1.5 [box-shadow:var(--sh-modal)] max-desk:static max-desk:order-last max-desk:w-full"
         >
           {searchable && (
             <input
@@ -567,7 +567,7 @@ function ActivePills({
           type="button"
           aria-label={`Remove ${pill.dim} filter ${pill.value}`}
           onClick={pill.remove}
-          className="flex items-center gap-1 rounded-[9px] bg-[var(--accent-tint)] py-[5px] pl-2.5 pr-[7px] text-[12px] transition-colors hover:bg-[var(--nav-hover)]"
+          className="cd-pop-in flex items-center gap-1 rounded-[9px] bg-[var(--accent-tint)] py-[5px] pl-2.5 pr-[7px] text-[12px] transition-colors hover:bg-[var(--nav-hover)]"
         >
           <span className="text-[var(--muted-2)]">{pill.dim}</span>
           <span className="font-semibold text-[var(--ink)]">{pill.value}</span>

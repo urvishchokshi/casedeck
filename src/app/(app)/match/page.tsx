@@ -49,7 +49,9 @@ export default async function MatchPage() {
     .sort((a, b) => Number(a.status === "busy") - Number(b.status === "busy"));
 
   return (
-    <>
+    // Matches the shell <main>'s flex column so the fade-up wrapper is
+    // layout-neutral.
+    <div className="cd-fade-up flex flex-col gap-4">
       <PageTitle plain="Find a " accent="Partner" />
 
       <MyMatchCard profile={mine ? stripEmbed(mine) : null} />
@@ -83,7 +85,7 @@ export default async function MatchPage() {
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }
 

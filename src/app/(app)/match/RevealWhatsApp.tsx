@@ -26,7 +26,7 @@ export function RevealWhatsApp({ number }: { number: string }) {
       <button
         type="button"
         onClick={() => setRevealed(true)}
-        className="flex h-[38px] w-full items-center justify-center gap-2 whitespace-nowrap rounded-[var(--rs)] bg-[var(--accent)] text-[12.5px] font-semibold text-[var(--on-accent)] transition-colors hover:bg-[var(--accent-hover)]"
+        className="flex h-[38px] w-full items-center justify-center gap-2 whitespace-nowrap rounded-[var(--rs)] bg-[var(--accent)] text-[12.5px] font-semibold text-[var(--on-accent)] transition-[color,background-color,transform] active:scale-[0.97] hover:bg-[var(--accent-hover)]"
       >
         {chatIcon}
         Reveal WhatsApp number
@@ -40,7 +40,7 @@ export function RevealWhatsApp({ number }: { number: string }) {
       href={`https://wa.me/${number.replace(/\D/g, "")}`}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex h-[38px] w-full items-center justify-center gap-2 whitespace-nowrap rounded-[var(--rs)] bg-[var(--accent-tint)] text-[12.5px] font-semibold text-[var(--accent)] transition-colors hover:bg-[var(--nav-hover)]"
+      className="cd-fade-in flex h-[38px] w-full items-center justify-center gap-2 whitespace-nowrap rounded-[var(--rs)] bg-[var(--accent-tint)] text-[12.5px] font-semibold text-[var(--accent)] transition-[color,background-color,transform] active:scale-[0.97] hover:bg-[var(--nav-hover)]"
     >
       {chatIcon}
       Open WhatsApp
