@@ -47,8 +47,8 @@ type StatusSegment = "all" | "not_done" | "done" | "revisit";
 const statusSegments: { label: string; value: StatusSegment }[] = [
   { label: "All", value: "all" },
   { label: "Not done", value: "not_done" },
-  { label: "Done", value: "done" },
   { label: "Revisit", value: "revisit" },
+  { label: "Done", value: "done" },
 ];
 
 const segmentState: Record<StatusSegment, Pick<CaseFilterState, "status">> = {
@@ -58,14 +58,22 @@ const segmentState: Record<StatusSegment, Pick<CaseFilterState, "status">> = {
   revisit: { status: "revisit" },
 };
 
+/**
+ * Owns the whole filter surface: the centered status segmented control, then
+ * the white results card whose header holds the results headline, search,
+ * dropdown triggers and active-value pills. `children` (the results table or
+ * an empty state, server-rendered) is slotted into the card below the header.
+ */
 export function CaseFilterBar({
   groups,
   filters,
   resultCount,
+  children,
 }: {
   groups: FilterGroup[];
   filters: CaseFilterState;
   resultCount: number;
+  children: React.ReactNode;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -133,37 +141,11 @@ export function CaseFilterBar({
 
   return (
     <>
-      <div className="flex flex-col gap-2.5 md:flex-row md:items-center md:gap-3">
-        <div className="relative min-w-0 flex-1">
-          <Search
-            size={15}
-            className="pointer-events-none absolute left-[13px] top-1/2 -translate-y-1/2 text-[var(--muted)]"
-          />
-          <input
-            type="search"
-            aria-label="Search cases"
-            placeholder="Search a case or company…"
-            value={searchValue}
-            onChange={(e) => {
-              const v = e.target.value;
-              setSearchValue(v);
-              clearTimeout(timer.current);
-              timer.current = setTimeout(() => {
-                const q = v.trim().slice(0, 100);
-                lastPushed.current = q;
-                router.replace(
-                  pathname + buildCasesSearchString({ ...filtersRef.current, q }),
-                  { scroll: false }
-                );
-              }, 300);
-            }}
-            className="h-[38px] w-full rounded-full border border-[var(--line)] bg-[var(--card)] pl-9 pr-[13px] text-[13.5px] text-[var(--ink)] placeholder:text-[var(--muted)]"
-          />
-        </div>
+      <div className="flex flex-wrap items-center justify-center gap-4">
         <div
           role="group"
           aria-label="Status"
-          className="inline-flex shrink-0 self-start rounded-full border border-[var(--line)] bg-[var(--chip)] p-[3px] md:self-auto"
+          className="flex gap-[3px] rounded-[14px] bg-[var(--card)] p-1 [box-shadow:var(--sh)]"
         >
           {statusSegments.map((s) => (
             <button
@@ -171,10 +153,10 @@ export function CaseFilterBar({
               type="button"
               aria-pressed={segment === s.value}
               onClick={() => push(segmentState[s.value])}
-              className={`h-[30px] whitespace-nowrap rounded-full px-3 text-[12.5px] font-semibold transition-colors ${
+              className={`whitespace-nowrap rounded-[11px] px-5 py-[9px] text-[13.5px] transition-colors max-desk:px-3.5 ${
                 segment === s.value
-                  ? "bg-[var(--card)] text-[var(--ink)] [box-shadow:var(--sh)]"
-                  : "text-[var(--muted)] hover:text-[var(--ink)]"
+                  ? "bg-[var(--seg-active)] font-semibold text-[var(--ink)]"
+                  : "text-[var(--muted-2)] hover:text-[var(--ink)]"
               }`}
             >
               {s.label}
@@ -183,46 +165,81 @@ export function CaseFilterBar({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5">
-        {groups.map((group) => (
-          <FilterDropdown
-            key={group.param}
-            label={group.label}
-            open={openDropdown === group.param}
-            onOpenChange={(open) => setOpenDropdown(open ? group.param : null)}
-            kind="multi"
-            options={group.options}
-            selected={group.selected}
-            onToggle={(value) => toggleValue(group.param, value)}
-          />
-        ))}
-        <FilterDropdown
-          label="Rating"
-          open={openDropdown === "rating"}
-          onOpenChange={(open) => setOpenDropdown(open ? "rating" : null)}
-          kind="rating"
-          rating={filters.rating}
-          onSelect={(rating) => push({ rating })}
-        />
-        <span className="ml-auto whitespace-nowrap font-[family-name:var(--font-mono)] text-[12px] text-[var(--muted)]">
-          {displayCount > 0 &&
-            `${displayCount} ${displayCount === 1 ? "filter" : "filters"} · `}
-          {`${resultCount} ${resultCount === 1 ? "result" : "results"}`}
-        </span>
-      </div>
+      <div className="flex min-w-0 flex-col rounded-[20px] bg-[var(--card)] p-1.5 [box-shadow:var(--sh)]">
+        <div className="flex flex-col items-center gap-3 px-4 pb-3.5 pt-4">
+          <span className="text-center text-[22px] font-bold tracking-[-0.02em] text-[var(--heading)]">
+            {resultCount}{" "}
+            <span className="text-[var(--accent)]">
+              result{resultCount === 1 ? "" : "s"}
+            </span>
+          </span>
 
-      {displayCount > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5 border-t border-[var(--line-soft)] pt-[11px]">
-          <ActivePills groups={groups} filters={filters} push={push} />
-          <button
-            type="button"
-            onClick={clearAll}
-            className="ml-1 text-[12.5px] font-semibold text-[var(--muted)] transition-colors hover:text-[var(--ink)]"
-          >
-            Clear all
-          </button>
+          <div className="relative w-full max-w-[420px]">
+            <Search
+              size={15}
+              className="pointer-events-none absolute left-[13px] top-1/2 -translate-y-1/2 text-[var(--muted-2)]"
+            />
+            <input
+              type="search"
+              aria-label="Search cases"
+              placeholder="Search a case or company…"
+              value={searchValue}
+              onChange={(e) => {
+                const v = e.target.value;
+                setSearchValue(v);
+                clearTimeout(timer.current);
+                timer.current = setTimeout(() => {
+                  const q = v.trim().slice(0, 100);
+                  lastPushed.current = q;
+                  router.replace(
+                    pathname + buildCasesSearchString({ ...filtersRef.current, q }),
+                    { scroll: false }
+                  );
+                }, 300);
+              }}
+              className="h-[38px] w-full rounded-[var(--rs)] border border-[var(--line-ctl)] bg-[var(--card)] pl-9 pr-[13px] text-[13.5px] text-[var(--ink)] placeholder:text-[var(--muted-2)]"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-[7px]">
+            {groups.map((group) => (
+              <FilterDropdown
+                key={group.param}
+                label={group.label}
+                open={openDropdown === group.param}
+                onOpenChange={(open) => setOpenDropdown(open ? group.param : null)}
+                kind="multi"
+                options={group.options}
+                selected={group.selected}
+                onToggle={(value) => toggleValue(group.param, value)}
+              />
+            ))}
+            <FilterDropdown
+              label="Rating"
+              open={openDropdown === "rating"}
+              onOpenChange={(open) => setOpenDropdown(open ? "rating" : null)}
+              kind="rating"
+              rating={filters.rating}
+              onSelect={(rating) => push({ rating })}
+            />
+          </div>
+
+          {displayCount > 0 && (
+            <div className="flex flex-wrap items-center justify-center gap-1.5">
+              <ActivePills groups={groups} filters={filters} push={push} />
+              <button
+                type="button"
+                onClick={clearAll}
+                className="ml-1 text-[12.5px] font-semibold text-[var(--muted-2)] transition-colors hover:text-[var(--ink)]"
+              >
+                Clear all
+              </button>
+            </div>
+          )}
         </div>
-      )}
+
+        {children}
+      </div>
     </>
   );
 }
@@ -360,7 +377,7 @@ function FilterDropdown(props: FilterDropdownProps) {
     "flex w-full items-center gap-2.5 rounded-[var(--rs)] px-2.5 py-[7px] text-left text-[13px] text-[var(--ink)] transition-colors hover:bg-[var(--thead)]";
 
   return (
-    <div ref={containerRef} className="relative max-md:contents">
+    <div ref={containerRef} className="relative max-desk:contents">
       <button
         ref={triggerRef}
         type="button"
@@ -377,10 +394,10 @@ function FilterDropdown(props: FilterDropdownProps) {
             onOpenChange(false);
           }
         }}
-        className={`inline-flex h-[34px] items-center gap-1.5 rounded-full border px-[13px] text-[13px] font-semibold transition-colors ${
+        className={`flex h-8 items-center gap-1.5 whitespace-nowrap rounded-[9px] border px-3 text-[12.5px] transition-colors ${
           selectedCount > 0
-            ? "border-[var(--accent)] bg-[var(--accent-50)] text-[var(--accent)]"
-            : "border-[var(--line)] bg-[var(--card)] text-[var(--ink)] hover:bg-[var(--thead)]"
+            ? "border-[var(--accent)] bg-[var(--accent-tint)] font-semibold text-[var(--accent)]"
+            : "border-[var(--line)] bg-[var(--shell)] text-[var(--slate)] hover:border-[var(--line-hover)] hover:bg-[var(--card)]"
         }`}
       >
         {label}
@@ -390,15 +407,15 @@ function FilterDropdown(props: FilterDropdownProps) {
           </span>
         )}
         <ChevronDown
-          size={14}
-          className={`transition-transform ${open ? "rotate-180" : ""}`}
+          size={13}
+          className={`text-[var(--faint)] transition-transform ${open ? "rotate-180" : ""}`}
         />
       </button>
 
       {open && (
         <div
           onKeyDown={onPanelKeyDown}
-          className="absolute left-0 top-[calc(100%+6px)] z-30 flex max-h-[320px] w-[280px] flex-col rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] p-1.5 [box-shadow:var(--sh-modal)] max-md:static max-md:order-last max-md:w-full"
+          className="absolute left-0 top-[calc(100%+6px)] z-30 flex max-h-[320px] w-[280px] flex-col rounded-[14px] border border-[var(--line)] bg-[var(--card)] p-1.5 [box-shadow:var(--sh-modal)] max-desk:static max-desk:order-last max-desk:w-full"
         >
           {searchable && (
             <input
@@ -408,7 +425,7 @@ function FilterDropdown(props: FilterDropdownProps) {
               placeholder="Search…"
               value={optionQuery}
               onChange={(e) => setOptionQuery(e.target.value)}
-              className="mb-1 h-8 w-full shrink-0 rounded-[var(--rs)] border border-[var(--line)] bg-[var(--card)] px-2.5 text-[13px] text-[var(--ink)] placeholder:text-[var(--muted)]"
+              className="mb-1 h-8 w-full shrink-0 rounded-[var(--rs)] border border-[var(--line-ctl)] bg-[var(--card)] px-2.5 text-[13px] text-[var(--ink)] placeholder:text-[var(--muted-2)]"
             />
           )}
           <div
@@ -448,7 +465,7 @@ function FilterDropdown(props: FilterDropdownProps) {
                         className={`grid h-4 w-4 shrink-0 place-items-center rounded-full border ${
                           isSelected
                             ? "border-[var(--accent)] bg-[var(--accent)]"
-                            : "border-[var(--line)] bg-[var(--card)]"
+                            : "border-[var(--line-ctl)] bg-[var(--card)]"
                         }`}
                       >
                         {isSelected && (
@@ -485,7 +502,7 @@ function FilterDropdown(props: FilterDropdownProps) {
                         className={`grid h-4 w-4 shrink-0 place-items-center rounded-[calc(var(--rs)/2)] border ${
                           isSelected
                             ? "border-[var(--accent)] bg-[var(--accent)]"
-                            : "border-[var(--line)] bg-[var(--card)]"
+                            : "border-[var(--line-ctl)] bg-[var(--card)]"
                         }`}
                       >
                         {isSelected && (
@@ -550,11 +567,11 @@ function ActivePills({
           type="button"
           aria-label={`Remove ${pill.dim} filter ${pill.value}`}
           onClick={pill.remove}
-          className="inline-flex items-center gap-1 rounded-full border border-[var(--accent-200)] bg-[var(--accent-50)] py-[3px] pl-2.5 pr-[7px] text-[12px] transition-colors hover:border-[var(--accent)]"
+          className="flex items-center gap-1 rounded-[9px] bg-[var(--accent-tint)] py-[5px] pl-2.5 pr-[7px] text-[12px] transition-colors hover:bg-[var(--nav-hover)]"
         >
-          <span className="text-[var(--muted)]">{pill.dim}</span>
+          <span className="text-[var(--muted-2)]">{pill.dim}</span>
           <span className="font-semibold text-[var(--ink)]">{pill.value}</span>
-          <X size={12} className="text-[var(--muted)]" />
+          <X size={12} className="text-[var(--muted-2)]" />
         </button>
       ))}
     </>

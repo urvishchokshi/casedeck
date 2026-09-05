@@ -4,42 +4,42 @@ import { useState } from "react";
 import type { TranscriptTurn } from "@/lib/types";
 
 export function Transcript({ turns }: { turns: TranscriptTurn[] }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
 
   return (
     <section>
-      <div className="mb-2.5 flex items-center justify-between">
-        <h2 className="text-[24px] text-[var(--ink)]">Transcript</h2>
+      <div className="mb-2.5 flex items-center justify-between gap-3 px-0.5">
+        <h2 className="text-[19px] tracking-[-0.015em]">Transcript</h2>
         <button
           type="button"
           onClick={() => setOpen((prev) => !prev)}
           aria-expanded={open}
-          className="whitespace-nowrap text-[13px] font-semibold text-[var(--accent)] hover:text-[var(--accent-hover)]"
+          className="h-8 whitespace-nowrap rounded-[9px] border border-[var(--line-ctl)] bg-[var(--card)] px-[13px] text-[12.5px] font-semibold text-[var(--accent)] transition-colors hover:border-[var(--accent)]"
         >
           {open ? "Collapse" : "Expand"}
         </button>
       </div>
       {open ? (
-        <div className="flex flex-col gap-3.5 rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] px-6 py-[22px] [box-shadow:var(--sh)]">
+        <div className="flex flex-col gap-1.5 rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] px-[22px] py-5 [box-shadow:var(--sh)] max-desk:px-4">
           {turns.map((turn, i) =>
             turn.speaker === "interviewer" ? (
               <div
                 key={i}
-                className="rounded-[var(--rs)] bg-[var(--accent-50)] px-3.5 py-3"
+                className="rounded-[14px] bg-[var(--turn)] px-4 py-3.5"
               >
-                <div className="mb-[3px] text-[11.5px] font-bold uppercase tracking-[0.06em] text-[var(--accent)]">
+                <div className="mb-[7px] text-[10.5px] font-bold uppercase tracking-[0.1em] text-[var(--accent)]">
                   Interviewer
                 </div>
-                <p className="whitespace-pre-line text-[14.5px] leading-[1.65] text-[var(--ink)]">
+                <p className="whitespace-pre-line text-[15px] leading-[1.6] text-[var(--ink)] [text-wrap:pretty]">
                   {turn.text}
                 </p>
               </div>
             ) : (
-              <div key={i} className="px-3.5 py-1">
-                <div className="mb-[3px] text-[11.5px] font-bold uppercase tracking-[0.06em] text-[var(--muted)]">
+              <div key={i} className="px-4 py-2.5">
+                <div className="mb-[7px] text-[10.5px] font-bold uppercase tracking-[0.1em] text-[var(--muted-2)]">
                   Candidate
                 </div>
-                <p className="whitespace-pre-line text-[14.5px] leading-[1.65] text-[var(--ink)]">
+                <p className="whitespace-pre-line text-[15px] leading-[1.6] text-[var(--ink)] [text-wrap:pretty]">
                   {turn.text}
                 </p>
               </div>
@@ -50,7 +50,7 @@ export function Transcript({ turns }: { turns: TranscriptTurn[] }) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="w-full rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] px-6 py-4 text-left text-[13.5px] font-semibold text-[var(--muted)] transition-colors [box-shadow:var(--sh)] hover:bg-[var(--thead)]"
+          className="w-full rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] px-6 py-4 text-left text-[13.5px] font-semibold text-[var(--muted)] transition-colors [box-shadow:var(--sh)] hover:bg-[var(--row-hover)]"
         >
           {turns.length} {turns.length === 1 ? "turn" : "turns"} · click to
           expand

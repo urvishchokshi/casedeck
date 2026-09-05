@@ -1,48 +1,122 @@
 @import "tailwindcss";
 
+@theme {
+  /* The design's single responsive switch: sidebar shell + table layouts all
+     flip at 900px (desk: = desktop). */
+  --breakpoint-desk: 900px;
+}
+
 /*
- * Casedeck design system.
+ * CaseDeck design system (v3, blue).
  * Every color, radius, and shadow used anywhere in the app is defined here
- * as a CSS variable (visual reference: design/casedeck-v2.html). Components
- * consume tokens via Tailwind arbitrary values (e.g. bg-[var(--card)]) and
- * never hardcode hex values.
+ * as a CSS variable (source of truth: the Claude Design project — see
+ * CLAUDE.md "Design"). Components consume tokens via Tailwind arbitrary
+ * values (e.g. bg-[var(--card)]) and never hardcode hex values.
  */
 :root {
-  /* Colors */
-  --ink: #171a19;
-  --canvas: #f6f5f1;
+  /* Ink */
+  --ink: #12233d; /* body text */
+  --heading: #0d1330; /* headings, strong values */
+  --slate: #3c5c85; /* secondary text, outline-button labels */
+  --muted: #5b7391; /* muted copy */
+  --muted-2: #8497b0; /* softer muted: sublines, labels */
+  --faint: #9db0c8; /* faintest: micro labels, SOON badges */
+  --dash: #c3d1e2; /* empty-value em-dashes */
+
+  /* Surfaces */
+  --canvas: #dceaf7; /* page base behind the gradient */
+  --canvas-grad: linear-gradient(180deg, #d6e7f6 0%, #e8f1fb 45%, #dfe9fb 100%);
+  --shell: #f7fafd; /* the floating app shell + filter-trigger chips */
   --card: #ffffff;
-  --line: #e6e3db;
-  --line-soft: #efece5;
-  --muted: #71756f;
-  --accent: #15614e;
-  --accent-hover: #0f4a3c;
-  --accent-50: #f0f6f3;
-  --accent-100: #e0ede8;
-  --accent-200: #bcd8ce;
-  --amber: #a4632c;
-  --amber-50: #f9f0e7;
-  --chip: #f1efe9;
-  --thead: #fbfaf7;
+  --thead: #f4f8fd; /* table header, segmented tracks */
+  --row-hover: #f9fcff;
+  --nav-hover: #edf3fa;
+  --pill: #f0f5fc; /* neutral tag pills */
+  --seg-active: #f0f6fe; /* active segment chip */
+  --tint: #eef4fb; /* tinted container (casebooks) */
+  --tint-border: #e2ebf6;
+  --tile: #f6f9fe; /* inset tiles (weakest ground) */
+  --chip-dim: #e8eef8; /* dimension chips on tiles */
+  --bar-track: #eaf1fa; /* progress-bar tracks */
+  --bar-track-sm: #e7eff8; /* difficulty mini-bar track */
+  --bar-idle: #dbe4f3; /* inactive difficulty border */
+  --avatar: #dbe7f5; /* initials avatar background */
+  --turn: #f2f7fe; /* interviewer transcript turns */
+
+  /* Accent */
+  --accent: #2547f5;
+  --accent-hover: #1a34c4;
+  --accent-tint: #eef2ff; /* accent-tinted pills / COMING SOON chip */
   --on-accent: #ffffff;
-  --status-active: #2e9e6b;
-  --status-idle: #d6d2c8;
+
+  /* Lines */
+  --line: #e6eef8; /* card borders */
+  --line-ctl: #dfe8f3; /* outline buttons / inputs */
+  --line-card: #dde7f4; /* grid-card borders */
+  --line-inner: #eef3fa; /* inner dividers */
+  --line-row: #f1f5fa; /* table row dividers */
+  --line-hover: #bcd0e8; /* outline-control hover border */
+  --line-card-hover: #b9cdeb; /* grid-card hover border */
+
+  /* Status */
+  --done-bg: #e9fbf1;
+  --done-fg: #12885a;
+  --done-dot: #22b673;
+  --revisit-bg: #fff2e8;
+  --revisit-fg: #b96917;
+  --revisit-dot: #f7923a;
+  --revisit-border: #f7d3b4;
+  --weak: #c2410c; /* weakest-ground scores */
 
   /* Radii */
-  --r: 12px; /* cards */
-  --rs: 8px; /* buttons / inputs */
-  --r-modal: 16px; /* dialog panels */
+  --r-shell: 26px; /* app shell */
+  --r: 18px; /* cards */
+  --rs: 10px; /* buttons / inputs */
+  --r-modal: 18px; /* dialog panels */
 
-  /* Shadow */
-  --sh: 0 1px 2px rgba(23, 26, 25, 0.05), 0 2px 10px rgba(23, 26, 25, 0.04);
-  --sh-modal: 0 24px 60px rgba(23, 26, 25, 0.25);
+  /* Shadows */
+  --sh-shell: 0 24px 60px rgba(31, 74, 140, 0.14);
+  --sh: 0 2px 10px rgba(31, 74, 140, 0.06); /* cards */
+  --sh-card-hover: 0 8px 22px rgba(31, 74, 140, 0.13);
+  --sh-accent: 0 8px 18px rgba(37, 71, 245, 0.28); /* active nav / primary CTA */
+  --sh-modal: 0 24px 60px rgba(31, 74, 140, 0.25);
 
-  /* Dialog backdrop (--ink at 42%) */
-  --overlay: rgba(23, 26, 25, 0.42);
+  /* Dialog backdrop */
+  --overlay: rgba(13, 19, 48, 0.42);
 
-  /* Composite surfaces */
-  --login-panel: linear-gradient(180deg, #f1efe9, #eae7df);
-  --ph: repeating-linear-gradient(135deg, #f4f2ec 0 12px, #eeebe3 12px 24px);
+  /* Striped placeholder for unavailable images */
+  --ph: repeating-linear-gradient(135deg, #f4f8fd 0 12px, #eaf1fa 12px 24px);
+
+  /* Landing page composites */
+  --landing-bg: radial-gradient(
+    120% 90% at 50% 118%,
+    #dbe6ff 0%,
+    #eef4fc 48%,
+    #f7fafd 100%
+  );
+  --landing-grid: rgba(13, 19, 48, 0.045);
+  --landing-ring-1: rgba(37, 71, 245, 0.15);
+  --landing-ring-2: rgba(37, 71, 245, 0.09);
+  --landing-glow: radial-gradient(
+    circle,
+    rgba(37, 71, 245, 0.28) 0%,
+    rgba(37, 71, 245, 0.1) 44%,
+    transparent 72%
+  );
+  --landing-corner: radial-gradient(
+    circle,
+    rgba(120, 160, 255, 0.24) 0%,
+    transparent 68%
+  );
+  --sh-cta: 0 14px 30px rgba(37, 71, 245, 0.32);
+
+  /* Coming-soon card */
+  --sh-soon: 0 8px 30px rgba(31, 74, 140, 0.09);
+  --soon-glow: radial-gradient(
+    circle,
+    rgba(37, 71, 245, 0.11),
+    transparent 68%
+  );
 }
 
 body {
@@ -58,10 +132,11 @@ h1,
 h2,
 h3,
 h4 {
-  font-family: var(--font-display), Georgia, serif;
-  font-weight: 400;
-  letter-spacing: -0.01em;
-  line-height: 1.05;
+  font-family: var(--font-ui), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--heading);
 }
 
 input:focus-visible,
@@ -72,7 +147,7 @@ a:focus-visible {
 }
 
 ::selection {
-  background: var(--accent-200);
+  background: var(--accent-tint);
 }
 
 /* Loading skeletons (src/components/ui/Skeleton.tsx) — shimmer built from
@@ -81,9 +156,9 @@ a:focus-visible {
   border-radius: var(--rs);
   background: linear-gradient(
     100deg,
-    var(--chip) 40%,
+    var(--bar-track) 40%,
     var(--thead) 50%,
-    var(--chip) 60%
+    var(--bar-track) 60%
   );
   background-size: 200% 100%;
   animation: shimmer 1.6s linear infinite;
@@ -95,9 +170,45 @@ a:focus-visible {
   }
 }
 
+/* Pulsing dot on the COMING SOON chip (src/components/ComingSoon.tsx). */
+.cd-pulse {
+  animation: cd-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes cd-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.35);
+  }
+}
+
+/* Slow drift for the landing page's background glow. */
+.cd-drift {
+  animation: cd-drift 16s ease-in-out infinite;
+}
+
+@keyframes cd-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -26px, 0) scale(1.06);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .skeleton {
     animation: none;
-    background: var(--chip);
+    background: var(--bar-track);
+  }
+  .cd-pulse,
+  .cd-drift {
+    animation: none;
   }
 }

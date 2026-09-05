@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
 
 export function SignInButton() {
@@ -25,12 +24,28 @@ export function SignInButton() {
   };
 
   return (
-    <Button
+    <button
+      type="button"
       onClick={signIn}
       disabled={loading}
-      className="h-11 w-full text-[14.5px]"
+      className="mt-[38px] flex h-14 items-center gap-[11px] whitespace-nowrap rounded-[14px] bg-[var(--accent)] px-[30px] text-[15px] font-semibold text-[var(--on-accent)] transition-colors [box-shadow:var(--sh-cta)] hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:opacity-60"
     >
-      {loading ? "Redirecting…" : "Sign in with Microsoft"}
-    </Button>
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden>
+        <path
+          d="M10 2.5l6.5 3.2v4.6c0 3.4-2.6 6.2-6.5 7.2-3.9-1-6.5-3.8-6.5-7.2V5.7L10 2.5z"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M7.4 10.1l1.9 1.9 3.4-3.7"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+      {loading ? "Redirecting…" : "Sign in with ISB ID"}
+    </button>
   );
 }

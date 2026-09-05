@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/Button";
-import { Pill } from "@/components/ui/Pill";
 import { clearOutcome, logCase } from "@/app/actions/progress";
 import { OUTCOME_META, OUTCOME_ORDER } from "@/lib/outcome";
 import type { CaseOutcome } from "@/lib/types";
@@ -12,9 +11,6 @@ export interface CaseProgressState {
   self_score: number | null;
   quality_rating: number | null;
 }
-
-const TEXT_ACTION_CLASSES =
-  "text-[13px] font-semibold text-[var(--muted)] underline underline-offset-2 hover:text-[var(--ink)] disabled:cursor-not-allowed disabled:opacity-50";
 
 export function CaseActions({
   caseId,
@@ -26,55 +22,87 @@ export function CaseActions({
   const outcome = progress?.outcome ?? null;
   const [actionError, setActionError] = useState<string | null>(null);
   const [unmarkPending, startUnmarkTransition] = useTransition();
-  const [dialogOpen, setDialogOpen] = useState(false);
+  // Which outcome the dialog opens preselected to; null = closed.
+  const [dialogOutcome, setDialogOutcome] = useState<CaseOutcome | null>(null);
+
+  const unmark = () =>
+    startUnmarkTransition(async () => {
+      setActionError(null);
+      const result = await clearOutcome(caseId);
+      if (!result.ok) setActionError(result.error);
+    });
 
   return (
     <div className="flex flex-none flex-col items-end gap-1.5">
-      <div className="flex gap-2">
-        {outcome === null ? (
-          <Button onClick={() => setDialogOpen(true)}>Log this case</Button>
-        ) : (
-          <span className="flex items-center gap-2.5">
-            <Pill tone={OUTCOME_META[outcome].tone}>
-              {OUTCOME_META[outcome].pill}
-            </Pill>
-            <button
-              type="button"
-              className={TEXT_ACTION_CLASSES}
-              disabled={unmarkPending}
-              onClick={() => setDialogOpen(true)}
-            >
-              Edit
-            </button>
-            <button
-              type="button"
-              className={TEXT_ACTION_CLASSES}
-              disabled={unmarkPending}
-              onClick={() =>
-                startUnmarkTransition(async () => {
-                  setActionError(null);
-                  const result = await clearOutcome(caseId);
-                  if (!result.ok) setActionError(result.error);
-                })
-              }
-            >
-              Unmark
-            </button>
-          </span>
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Mark done: opens the log dialog preselected to "done"; when
+            already done, clicking unmarks. */}
+        <button
+          type="button"
+          disabled={unmarkPending}
+          aria-pressed={outcome === "done"}
+          aria-label={outcome === "done" ? "Unmark done" : "Mark done"}
+          title={outcome === "done" ? "Unmark done" : undefined}
+          onClick={() =>
+            outcome === "done" ? unmark() : setDialogOutcome("done")
+          }
+          className={`flex h-[38px] items-center gap-2 whitespace-nowrap rounded-[11px] px-4 text-[12.5px] font-semibold transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 ${
+            outcome === "done"
+              ? "bg-[var(--done-bg)] text-[var(--done-fg)]"
+              : "bg-[var(--accent)] text-[var(--on-accent)] [box-shadow:var(--sh-accent)]"
+          }`}
+        >
+          <span
+            aria-hidden
+            className={`h-[7px] w-[7px] rounded-full ${
+              outcome === "done"
+                ? "bg-[var(--done-dot)]"
+                : "bg-[var(--on-accent)] opacity-85"
+            }`}
+          />
+          {outcome === "done" ? "Done" : "Mark done"}
+        </button>
+
+        <button
+          type="button"
+          disabled={unmarkPending}
+          aria-pressed={outcome === "revisit"}
+          onClick={() =>
+            outcome === "revisit" ? unmark() : setDialogOutcome("revisit")
+          }
+          className={`h-[38px] whitespace-nowrap rounded-[11px] border px-4 text-[12.5px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+            outcome === "revisit"
+              ? "border-[var(--revisit-border)] bg-[var(--revisit-bg)] text-[var(--revisit-fg)] hover:border-[var(--revisit-dot)]"
+              : "border-[var(--line-ctl)] bg-[var(--card)] text-[var(--slate)] hover:border-[var(--revisit-dot)]"
+          }`}
+        >
+          {outcome === "revisit" ? "Unmark revisit" : "Mark revisit"}
+        </button>
+
+        {outcome !== null && (
+          <button
+            type="button"
+            disabled={unmarkPending}
+            onClick={() => setDialogOutcome(outcome)}
+            className="h-[38px] whitespace-nowrap rounded-[11px] border border-[var(--line-ctl)] bg-[var(--card)] px-4 text-[12.5px] font-semibold text-[var(--slate)] transition-colors hover:border-[var(--line-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Edit
+          </button>
         )}
       </div>
       {actionError && (
-        <p className="text-[12.5px] font-semibold text-[var(--amber)]">
+        <p className="text-[12.5px] font-semibold text-[var(--weak)]">
           {actionError}
         </p>
       )}
-      {dialogOpen && (
+      {dialogOutcome !== null && (
         <LogCaseDialog
           caseId={caseId}
-          initialOutcome={outcome}
+          hadOutcome={outcome !== null}
+          initialOutcome={dialogOutcome}
           initialQuality={progress?.quality_rating ?? null}
           initialScore={progress?.self_score ?? null}
-          onClose={() => setDialogOpen(false)}
+          onClose={() => setDialogOutcome(null)}
         />
       )}
     </div>
@@ -86,19 +114,20 @@ const SCORE_VALUES = Array.from({ length: 10 }, (_, i) => i + 1);
 
 function LogCaseDialog({
   caseId,
+  hadOutcome,
   initialOutcome,
   initialQuality,
   initialScore,
   onClose,
 }: {
   caseId: string;
-  initialOutcome: CaseOutcome | null;
+  hadOutcome: boolean;
+  initialOutcome: CaseOutcome;
   initialQuality: number | null;
   initialScore: number | null;
   onClose: () => void;
 }) {
-  // Defaulting to "done" keeps the required control always satisfied.
-  const [outcome, setOutcome] = useState<CaseOutcome>(initialOutcome ?? "done");
+  const [outcome, setOutcome] = useState<CaseOutcome>(initialOutcome);
   const [quality, setQuality] = useState(initialQuality);
   const [score, setScore] = useState(initialScore);
   const [error, setError] = useState<string | null>(null);
@@ -148,7 +177,9 @@ function LogCaseDialog({
         className="flex w-[440px] max-w-full flex-col gap-5 rounded-[var(--r-modal)] bg-[var(--card)] p-[26px] outline-none [box-shadow:var(--sh-modal)]"
       >
         <div>
-          <h3 className="mb-1 text-[28px] text-[var(--ink)]">Log this case</h3>
+          <h3 className="mb-1 text-[24px] tracking-[-0.02em]">
+            Log this case
+          </h3>
           <p className="text-[13.5px] text-[var(--muted)]">
             Your rating helps the next student pick well.
           </p>
@@ -165,10 +196,10 @@ function LogCaseDialog({
                 type="button"
                 aria-pressed={outcome === o}
                 onClick={() => setOutcome(o)}
-                className={`whitespace-nowrap rounded-[var(--rs)] border px-2.5 py-1.5 text-[13px] font-semibold ${
+                className={`whitespace-nowrap rounded-[9px] border px-3 py-[7px] text-[12.5px] font-semibold ${
                   outcome === o
-                    ? "border-[var(--accent)] bg-[var(--accent-50)] text-[var(--accent)]"
-                    : "border-[var(--line)] bg-[var(--card)] text-[var(--muted)] transition-colors hover:text-[var(--ink)]"
+                    ? "border-[var(--accent)] bg-[var(--accent-tint)] text-[var(--accent)]"
+                    : "border-[var(--line-ctl)] bg-[var(--card)] text-[var(--muted)] transition-colors hover:text-[var(--ink)]"
                 }`}
               >
                 {OUTCOME_META[o].option}
@@ -189,10 +220,10 @@ function LogCaseDialog({
                 aria-pressed={quality === n}
                 aria-label={`${n} star${n === 1 ? "" : "s"}`}
                 onClick={() => setQuality(n)}
-                className={`whitespace-nowrap rounded-[var(--rs)] border px-2.5 py-1.5 text-[13px] ${
+                className={`whitespace-nowrap rounded-[9px] border px-2.5 py-[7px] text-[13px] ${
                   quality === n
-                    ? "border-[var(--amber)] bg-[var(--amber-50)] text-[var(--amber)]"
-                    : "border-[var(--line)] bg-[var(--card)] text-[var(--status-idle)] transition-colors hover:text-[var(--amber)]"
+                    ? "border-[var(--revisit-border)] bg-[var(--revisit-bg)] text-[var(--revisit-fg)]"
+                    : "border-[var(--line-ctl)] bg-[var(--card)] text-[var(--dash)] transition-colors hover:text-[var(--revisit-fg)]"
                 }`}
               >
                 {"★".repeat(n)}
@@ -212,10 +243,10 @@ function LogCaseDialog({
                 type="button"
                 aria-pressed={score === n}
                 onClick={() => setScore(n)}
-                className={`h-[33px] w-[33px] rounded-[var(--rs)] border text-[13px] font-semibold ${
+                className={`h-[33px] w-[33px] rounded-[9px] border text-[13px] font-semibold ${
                   score === n
                     ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--on-accent)]"
-                    : "border-[var(--line)] bg-[var(--card)] text-[var(--ink)] transition-colors hover:bg-[var(--thead)]"
+                    : "border-[var(--line-ctl)] bg-[var(--card)] text-[var(--ink)] transition-colors hover:bg-[var(--thead)]"
                 }`}
               >
                 {n}
@@ -225,7 +256,7 @@ function LogCaseDialog({
         </div>
 
         {error && (
-          <p className="text-[12.5px] font-semibold text-[var(--amber)]">
+          <p className="text-[12.5px] font-semibold text-[var(--weak)]">
             {error}
           </p>
         )}
@@ -241,7 +272,7 @@ function LogCaseDialog({
               run(() => logCase(caseId, outcome, quality, score));
             }}
           >
-            {initialOutcome !== null ? "Save changes" : "Save log"}
+            {hadOutcome ? "Save changes" : "Save log"}
           </Button>
         </div>
       </div>

@@ -8,7 +8,6 @@ import {
   useTransition,
 } from "react";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { Pill } from "@/components/ui/Pill";
 import {
   deleteMatchProfile,
@@ -33,14 +32,17 @@ const STATUS_LABELS: Record<PartnerStatus, string> = {
   busy: "Busy",
 };
 
+const cardClasses =
+  "rounded-[20px] bg-[var(--card)] px-[18px] py-4 [box-shadow:var(--sh)]";
+
 export function MyMatchCard({ profile }: { profile: MatchProfile | null }) {
   const [editing, setEditing] = useState(false);
   const [removeOpen, setRemoveOpen] = useState(false);
 
   if (!profile) {
     return (
-      <Card className="mb-[26px]">
-        <p className="text-[17px] font-semibold text-[var(--ink)]">
+      <div className={cardClasses}>
+        <p className="text-[17px] font-bold text-[var(--heading)]">
           Join the board
         </p>
         <p className="mt-1 text-[13.5px] text-[var(--muted)]">
@@ -48,14 +50,14 @@ export function MyMatchCard({ profile }: { profile: MatchProfile | null }) {
           is only revealed on click.
         </p>
         <ProfileForm initial={null} submitLabel="Add my card" />
-      </Card>
+      </div>
     );
   }
 
   if (editing) {
     return (
-      <Card className="mb-[26px]">
-        <p className="text-[17px] font-semibold text-[var(--ink)]">
+      <div className={cardClasses}>
+        <p className="text-[17px] font-bold text-[var(--heading)]">
           Edit your card
         </p>
         <ProfileForm
@@ -64,61 +66,76 @@ export function MyMatchCard({ profile }: { profile: MatchProfile | null }) {
           onCancel={() => setEditing(false)}
           onSaved={() => setEditing(false)}
         />
-      </Card>
+      </div>
     );
   }
 
+  const available = profile.status === "available";
+
   return (
-    <Card className="mb-[26px] flex flex-wrap items-center gap-x-5 gap-y-3">
-      <div className="min-w-0">
-        <p className="text-[14px] font-semibold text-[var(--ink)]">
-          Your card
-          <span className="ml-2 font-[family-name:var(--font-mono)] text-[13px] font-medium text-[var(--muted)]">
-            {profile.whatsapp_number}
+    <div className={`${cardClasses} flex flex-wrap items-center gap-4`}>
+      <div className="min-w-[180px] flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[14.5px] font-bold text-[var(--heading)]">
+            Your card
           </span>
-        </p>
-        <p className="mt-0.5 text-[12.5px] font-medium text-[var(--muted)]">
-          {profile.workex_function} · {profile.workex_industry}
+          <Pill
+            tone={available ? "done" : "revisit"}
+            className="px-[9px] py-[3px] text-[11.5px]"
+          >
+            <span
+              aria-hidden
+              className="h-[6px] w-[6px] rounded-full"
+              style={{
+                background: available
+                  ? "var(--done-dot)"
+                  : "var(--revisit-dot)",
+              }}
+            />
+            {STATUS_LABELS[profile.status]}
+          </Pill>
+        </div>
+        <p className="mt-[3px] text-[12.5px] text-[var(--muted-2)]">
+          {profile.workex_function} · {profile.campus} ·{" "}
+          {profile.workex_industry}
         </p>
       </div>
-      <div className="flex items-center gap-1.5">
-        <Pill>{profile.campus}</Pill>
-        <Pill>{MODE_LABELS[profile.mode_preference]}</Pill>
-      </div>
-      <div className="ml-auto flex flex-wrap items-center gap-2.5">
+      <div className="flex flex-wrap items-center gap-2">
         <StatusToggle current={profile.status} />
-        <Button variant="secondary" onClick={() => setEditing(true)}>
-          Edit
+        <Button
+          variant="secondary"
+          className="h-9 px-3.5"
+          onClick={() => setEditing(true)}
+        >
+          Edit card
         </Button>
         <button
           type="button"
           onClick={() => setRemoveOpen(true)}
-          className="text-[13px] font-semibold text-[var(--muted)] underline underline-offset-2 hover:text-[var(--ink)]"
+          className="text-[12.5px] font-semibold text-[var(--muted-2)] underline underline-offset-2 transition-colors hover:text-[var(--weak)]"
         >
-          Remove my card
+          Remove
         </button>
       </div>
       {removeOpen && <RemoveCardDialog onClose={() => setRemoveOpen(false)} />}
-    </Card>
+    </div>
   );
 }
 
-const chipBase = "rounded-full px-[11px] py-1 text-[12px] font-semibold";
+const chipBase = "rounded-[9px] px-3 py-[7px] text-[12.5px] font-semibold";
 const chipSelected = `${chipBase} bg-[var(--accent)] text-[var(--on-accent)]`;
-const chipUnselected = `${chipBase} border border-[var(--line)] bg-[var(--card)] text-[var(--ink)] transition-colors hover:bg-[var(--thead)]`;
+const chipUnselected = `${chipBase} border border-[var(--line-ctl)] bg-[var(--card)] text-[var(--slate)] transition-colors hover:border-[var(--line-hover)]`;
 
 function Segmented<T extends string>({
   options,
   value,
   onChange,
   disabled,
-  selectedClassName,
 }: {
   options: { value: T; label: string }[];
   value: T | null;
   onChange: (next: T) => void;
   disabled?: boolean;
-  selectedClassName?: string;
 }) {
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -130,9 +147,7 @@ function Segmented<T extends string>({
           disabled={disabled}
           onClick={() => onChange(option.value)}
           className={`${
-            value === option.value
-              ? (selectedClassName ?? chipSelected)
-              : chipUnselected
+            value === option.value ? chipSelected : chipUnselected
           } disabled:cursor-not-allowed disabled:opacity-50`}
         >
           {option.label}
@@ -143,8 +158,9 @@ function Segmented<T extends string>({
 }
 
 const inputClasses =
-  "h-10 w-full rounded-[var(--rs)] border border-[var(--line)] bg-[var(--card)] px-[13px] text-[13.5px] text-[var(--ink)] placeholder:text-[var(--muted)]";
-const fieldLabelClasses = "mb-[7px] text-[12px] font-semibold text-[var(--muted)]";
+  "h-10 w-full rounded-[var(--rs)] border border-[var(--line-ctl)] bg-[var(--card)] px-[13px] text-[13.5px] text-[var(--ink)] placeholder:text-[var(--muted-2)]";
+const fieldLabelClasses =
+  "mb-[7px] text-[12px] font-semibold text-[var(--muted)]";
 
 function ProfileForm({
   initial,
@@ -277,7 +293,7 @@ function ProfileForm({
         </div>
       </div>
       {error && (
-        <p className="text-[12.5px] font-semibold text-[var(--amber)]">
+        <p className="text-[12.5px] font-semibold text-[var(--weak)]">
           {error}
         </p>
       )}
@@ -294,8 +310,6 @@ function ProfileForm({
     </div>
   );
 }
-
-const busySelected = `${chipBase} border border-[var(--amber-50)] bg-[var(--amber-50)] text-[var(--amber)]`;
 
 function StatusToggle({ current }: { current: PartnerStatus }) {
   const [optimisticStatus, setOptimisticStatus] = useOptimistic(current);
@@ -314,20 +328,28 @@ function StatusToggle({ current }: { current: PartnerStatus }) {
 
   return (
     <div className="flex flex-col items-end gap-1">
-      <Segmented
-        options={(["available", "busy"] as const).map((value) => ({
-          value,
-          label: STATUS_LABELS[value],
-        }))}
-        value={optimisticStatus}
-        onChange={choose}
-        // Disabled while in flight: a second click before the server settles
-        // would desync the optimistic value from the DB.
-        disabled={pending}
-        selectedClassName={optimisticStatus === "busy" ? busySelected : undefined}
-      />
+      <div className="flex gap-[3px] rounded-[11px] bg-[var(--thead)] p-[3px]">
+        {(["available", "busy"] as const).map((value) => (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={optimisticStatus === value}
+            // Disabled while in flight: a second click before the server
+            // settles would desync the optimistic value from the DB.
+            disabled={pending}
+            onClick={() => choose(value)}
+            className={`rounded-[9px] px-3.5 py-[7px] text-[12.5px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+              optimisticStatus === value
+                ? "bg-[var(--accent)] text-[var(--on-accent)]"
+                : "text-[var(--muted-2)] hover:text-[var(--ink)]"
+            }`}
+          >
+            {STATUS_LABELS[value]}
+          </button>
+        ))}
+      </div>
       {error && (
-        <p className="text-[12.5px] font-semibold text-[var(--amber)]">
+        <p className="text-[12.5px] font-semibold text-[var(--weak)]">
           {error}
         </p>
       )}
@@ -383,7 +405,7 @@ function RemoveCardDialog({ onClose }: { onClose: () => void }) {
         className="flex w-[440px] max-w-full flex-col gap-5 rounded-[var(--r-modal)] bg-[var(--card)] p-[26px] outline-none [box-shadow:var(--sh-modal)]"
       >
         <div>
-          <h3 className="mb-1 text-[28px] text-[var(--ink)]">
+          <h3 className="mb-1 text-[24px] tracking-[-0.02em]">
             Remove your card?
           </h3>
           <p className="text-[13.5px] text-[var(--muted)]">
@@ -392,7 +414,7 @@ function RemoveCardDialog({ onClose }: { onClose: () => void }) {
           </p>
         </div>
         {error && (
-          <p className="text-[12.5px] font-semibold text-[var(--amber)]">
+          <p className="text-[12.5px] font-semibold text-[var(--weak)]">
             {error}
           </p>
         )}

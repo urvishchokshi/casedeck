@@ -1,36 +1,23 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Instrument_Serif, Plus_Jakarta_Sans } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { siteOrigin } from "@/lib/site-url";
 import "./globals.css";
 
-const display = Instrument_Serif({
-  subsets: ["latin"],
-  weight: "400",
-  style: ["normal", "italic"],
-  variable: "--font-display",
-});
-
 const ui = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800"],
   variable: "--font-ui",
-});
-
-const mono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-mono",
 });
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin()),
-  title: { default: "Casedeck", template: "%s · Casedeck" },
+  title: { default: "CaseDeck", template: "%s · CaseDeck" },
   description:
     "Case interview prep for ISB placements — case library, progress tracking, partner matching, and casebook downloads.",
   openGraph: {
-    title: "Casedeck",
+    title: "CaseDeck",
     description: "Case interview prep for ISB placements.",
-    siteName: "Casedeck",
+    siteName: "CaseDeck",
     type: "website",
   },
   // Private ISB-only tool — keep it out of search indexes.
@@ -44,11 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${display.variable} ${ui.variable} ${mono.variable} antialiased`}
-      >
-        {children}
-      </body>
+      <body className={`${ui.variable} antialiased`}>{children}</body>
     </html>
   );
 }

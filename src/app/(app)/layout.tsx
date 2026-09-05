@@ -1,5 +1,9 @@
 import { redirect } from "next/navigation";
-import { AppShell, type ShellUser } from "@/components/AppShell";
+import {
+  AppShell,
+  type ShellCounts,
+  type ShellUser,
+} from "@/components/AppShell";
 import { isIsbEmail } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
@@ -41,5 +45,20 @@ export default async function AuthenticatedLayout({
     initials: initialsOf(name),
   };
 
-  return <AppShell user={shellUser}>{children}</AppShell>;
+  // Nav badge counts (head-only, immune to the PostgREST row cap).
+  const [{ count: caseCount }, { count: casebookCount }] = await Promise.all([
+    supabase.from("cases").select("*", { count: "exact", head: true }),
+    supabase.from("casebooks").select("*", { count: "exact", head: true }),
+  ]);
+
+  const counts: ShellCounts = {
+    cases: caseCount ?? 0,
+    casebooks: casebookCount ?? 0,
+  };
+
+  return (
+    <AppShell user={shellUser} counts={counts}>
+      {children}
+    </AppShell>
+  );
 }

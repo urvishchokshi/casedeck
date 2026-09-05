@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 26 26">
-  <!-- Mirrors the Brand mark: accent square, 7px radius, bold white C.
-       Hex literals are fine here — static asset, CSS vars unavailable. -->
-  <rect width="26" height="26" rx="7" fill="#15614e"/>
-  <text x="13" y="13.6" text-anchor="middle" dominant-baseline="central" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" fill="#ffffff">C</text>
-</svg>

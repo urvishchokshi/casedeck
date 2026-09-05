@@ -1,16 +1,16 @@
 import Link from "next/link";
-import { Pill } from "@/components/ui/Pill";
-import { RatingPill } from "@/components/RatingPill";
+import { PageTitle } from "@/components/PageTitle";
 import { createClient } from "@/lib/supabase/server";
 import { MIN_RATINGS_TO_SHOW, shownRating } from "@/lib/rating";
 import type { CaseOutcome, DifficultyLevel } from "@/lib/types";
-import { OUTCOME_META } from "@/lib/outcome";
 import {
+  buildCasesSearchString,
   parseCaseFilters,
   sanitizeSearchQuery,
   type FilterOption,
 } from "@/lib/case-filters";
 import { CaseFilterBar, type FilterGroup } from "./CaseFilters";
+import { CaseTable, type CaseTableRow } from "./CaseTable";
 
 export const metadata = { title: "Case library" };
 
@@ -35,37 +35,12 @@ interface FacetRow {
   company: string | null;
 }
 
-interface ProgressInfo {
-  outcome: CaseOutcome | null;
-}
-
-const thClasses =
-  "border-b border-[var(--line)] px-3 py-[11px] text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--muted)] first:pl-4 last:pr-4";
-const tdClasses =
-  "border-b border-[var(--line-soft)] px-3 py-2.5 text-[13px] first:pl-4 last:pr-4";
-
-function Rating({ c }: { c: CaseListRow }) {
-  const avg = shownRating(c.avg_rating, c.rating_count);
-  return avg !== null ? (
-    <span className="font-semibold text-[var(--amber)]">★ {avg.toFixed(1)}</span>
-  ) : (
-    <span className="text-[var(--muted)]">New</span>
-  );
-}
-
-function OutcomePill({ outcome }: { outcome: CaseOutcome | null | undefined }) {
-  if (outcome == null) return null;
-  return <Pill tone={OUTCOME_META[outcome].tone}>{OUTCOME_META[outcome].pill}</Pill>;
-}
-
-function StatusPills({ progress }: { progress: ProgressInfo | undefined }) {
-  if (!progress || progress.outcome === null) {
-    return <span className="text-[var(--muted)]">—</span>;
-  }
-  return <OutcomePill outcome={progress.outcome} />;
-}
-
 const DIFFICULTY_ORDER: readonly string[] = ["Easy", "Medium", "Hard"];
+
+/** "IIM Ahmedabad Casebook 2025–26" → "IIM-Ahmedabad 2025–26" (design rule). */
+function shortBookName(name: string): string {
+  return name.replace(" Casebook", "").replace(/^IIM /, "IIM-");
+}
 
 /**
  * Distinct sorted values unioned with any selected-but-unknown values, so a
@@ -143,25 +118,25 @@ export default async function CasesPage({
     throw new Error(`Failed to load cases: ${firstError.message}`);
   }
 
-  const progressByCase = new Map<string, ProgressInfo>(
-    (progressRes?.data ?? []).map((p) => [p.case_id, { outcome: p.outcome }])
+  const outcomeByCase = new Map<string, CaseOutcome | null>(
+    (progressRes?.data ?? []).map((p) => [p.case_id, p.outcome])
   );
 
   // The Status group filters in JS after the query: "not started" is the
   // absence of a progress row, which the SQL filter can't express; fine under
   // the 500-row cap.
-  const statusClauses: ((p: ProgressInfo | undefined) => boolean)[] = [];
-  if (filters.status === "done") statusClauses.push((p) => p?.outcome === "done");
-  if (filters.status === "revisit")
-    statusClauses.push((p) => p?.outcome === "revisit");
-  if (filters.status === "not_done")
-    statusClauses.push((p) => (p?.outcome ?? null) === null);
+  const statusClauses: ((o: CaseOutcome | null) => boolean)[] = [];
+  if (filters.status === "done") statusClauses.push((o) => o === "done");
+  if (filters.status === "revisit") statusClauses.push((o) => o === "revisit");
+  if (filters.status === "not_done") statusClauses.push((o) => o === null);
 
   const cases = ((casesRes.data ?? []) as unknown as CaseListRow[])
     .filter(
       (c) =>
         statusClauses.length === 0 ||
-        statusClauses.some((clause) => clause(progressByCase.get(c.id)))
+        statusClauses.some((clause) =>
+          clause(outcomeByCase.get(c.id) ?? null)
+        )
     )
     .sort(
       (a, b) =>
@@ -171,6 +146,21 @@ export default async function CasesPage({
   const facets = (facetsRes.data ?? []) as unknown as FacetRow[];
   const casebooks = casebooksRes.data ?? [];
   const totalCases = facets.length;
+
+  const rows: CaseTableRow[] = cases.map((c) => {
+    const rating = shownRating(c.avg_rating, c.rating_count);
+    return {
+      id: c.id,
+      title: c.title,
+      book: shortBookName(c.casebook?.name ?? "—"),
+      company: c.company,
+      industry: c.industry,
+      type: c.case_types.join(", "),
+      difficulty: c.difficulty,
+      rating: rating !== null ? rating.toFixed(1) : null,
+      outcome: outcomeByCase.get(c.id) ?? null,
+    };
+  });
 
   const nonNull = (values: (string | null)[]) =>
     values.filter((v): v is string => v !== null);
@@ -219,159 +209,49 @@ export default async function CasesPage({
   ].filter((group) => group.options.length > 0);
 
   return (
-    <div>
-      <div className="mb-[22px]">
-        <h1 className="text-[40px] text-[var(--ink)]">Case library</h1>
-        <p className="mt-1 text-[14px] text-[var(--muted)]">
-          {`${cases.length} ${cases.length === 1 ? "case" : "cases"}`}
-        </p>
-      </div>
+    <>
+      <PageTitle plain="Case " accent="Library" />
 
-      <div className="mb-[18px] flex flex-col gap-[11px] rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] px-[18px] py-4 [box-shadow:var(--sh)]">
-        <CaseFilterBar
-          groups={filterGroups}
-          filters={filters}
-          resultCount={cases.length}
-        />
-      </div>
-
-      {totalCases === 0 ? (
-        <div className="grid place-items-center rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] px-6 py-16 text-center [box-shadow:var(--sh)]">
-          <div>
-            <p className="text-[17px] font-semibold text-[var(--ink)]">
-              No cases yet
-            </p>
-            <p className="mt-1 text-[14px] text-[var(--muted)]">
-              Import a casebook with the content pipeline and cases will show up
-              here.
-            </p>
+      <CaseFilterBar
+        groups={filterGroups}
+        filters={filters}
+        resultCount={cases.length}
+      >
+        {totalCases === 0 ? (
+          <div className="grid place-items-center px-6 pb-16 pt-8 text-center">
+            <div>
+              <p className="text-[17px] font-semibold text-[var(--ink)]">
+                No cases yet
+              </p>
+              <p className="mt-1 text-[14px] text-[var(--muted)]">
+                Import a casebook with the content pipeline and cases will show
+                up here.
+              </p>
+            </div>
           </div>
-        </div>
-      ) : cases.length === 0 ? (
-        <div className="grid place-items-center rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] px-6 py-16 text-center [box-shadow:var(--sh)]">
-          <div>
-            <p className="text-[17px] font-semibold text-[var(--ink)]">
-              No cases match your filters
-            </p>
-            <p className="mt-1 text-[14px] text-[var(--muted)]">
-              Try removing some filters or changing your search.
-            </p>
-            <Link
-              href="/cases"
-              className="mt-4 inline-flex h-[38px] items-center rounded-full border border-[var(--line)] bg-[var(--card)] px-[15px] text-[13.5px] font-semibold text-[var(--ink)] transition-colors hover:bg-[var(--thead)]"
-            >
-              Clear filters
-            </Link>
-          </div>
-        </div>
-      ) : (
-        <>
-          {/* Desktop table */}
-          <div className="hidden overflow-hidden rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] [box-shadow:var(--sh)] md:block">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-[var(--thead)]">
-                  <th className={`${thClasses} w-[34%]`}>Case</th>
-                  <th className={thClasses}>Casebook</th>
-                  <th className={thClasses}>Company</th>
-                  <th className={thClasses}>Industry</th>
-                  <th className={thClasses}>Type</th>
-                  <th className={thClasses}>Difficulty</th>
-                  <th className={thClasses}>Rating</th>
-                  <th className={thClasses}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cases.map((c) => (
-                  <tr
-                    key={c.id}
-                    className="relative transition-colors hover:bg-[var(--thead)]"
-                  >
-                    <td className={tdClasses}>
-                      <Link
-                        href={`/cases/${c.id}`}
-                        className="after:absolute after:inset-0"
-                      >
-                        <span className="block text-[15px] font-semibold leading-tight tracking-[-0.01em] text-[var(--ink)]">
-                          {c.title}
-                        </span>
-                      </Link>
-                    </td>
-                    <td className={`${tdClasses} text-[var(--muted)]`}>
-                      {c.casebook?.name ?? "—"}
-                    </td>
-                    <td className={tdClasses}>
-                      {c.company ? (
-                        <Pill>{c.company}</Pill>
-                      ) : (
-                        <span className="text-[var(--muted)]">—</span>
-                      )}
-                    </td>
-                    <td className={tdClasses}>
-                      {c.industry ? (
-                        <Pill>{c.industry}</Pill>
-                      ) : (
-                        <span className="text-[var(--muted)]">—</span>
-                      )}
-                    </td>
-                    <td className={tdClasses}>
-                      <span className="flex flex-wrap gap-1.5">
-                        {c.case_types.map((t, i) => (
-                          <Pill key={`type-${t}-${i}`} tone="accent">
-                            {t}
-                          </Pill>
-                        ))}
-                      </span>
-                    </td>
-                    <td className={tdClasses}>
-                      {c.difficulty ? (
-                        <Pill>{c.difficulty}</Pill>
-                      ) : (
-                        <span className="text-[var(--muted)]">—</span>
-                      )}
-                    </td>
-                    <td className={tdClasses}>
-                      <Rating c={c} />
-                    </td>
-                    <td className={tdClasses}>
-                      <StatusPills progress={progressByCase.get(c.id)} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile stacked cards */}
-          <div className="flex flex-col gap-3 md:hidden">
-            {cases.map((c) => (
+        ) : cases.length === 0 ? (
+          <div className="grid place-items-center px-6 pb-16 pt-8 text-center">
+            <div>
+              <p className="text-[17px] font-semibold text-[var(--ink)]">
+                No cases match your filters
+              </p>
+              <p className="mt-1 text-[14px] text-[var(--muted)]">
+                Try removing some filters or changing your search.
+              </p>
               <Link
-                key={c.id}
-                href={`/cases/${c.id}`}
-                className="block rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] p-4 [box-shadow:var(--sh)]"
+                href="/cases"
+                className="mt-4 inline-flex h-[34px] items-center rounded-[var(--rs)] border border-[var(--line-ctl)] bg-[var(--card)] px-4 text-[12.5px] font-semibold text-[var(--slate)] transition-colors hover:border-[var(--line-hover)]"
               >
-                <div className="text-[15px] font-semibold leading-tight tracking-[-0.01em] text-[var(--ink)]">
-                  {c.title}
-                </div>
-                <div className="mt-0.5 font-[family-name:var(--font-mono)] text-[12px] text-[var(--muted)]">
-                  {c.casebook?.name ?? "—"}
-                </div>
-                <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                  {c.case_types.map((t, i) => (
-                    <Pill key={`type-${t}-${i}`} tone="accent">
-                      {t}
-                    </Pill>
-                  ))}
-                  {c.company && <Pill>{c.company}</Pill>}
-                  {c.difficulty && <Pill>{c.difficulty}</Pill>}
-                  <RatingPill avg={c.avg_rating} count={c.rating_count} />
-                  <OutcomePill outcome={progressByCase.get(c.id)?.outcome} />
-                </div>
+                Clear filters
               </Link>
-            ))}
+            </div>
           </div>
-        </>
-      )}
-    </div>
+        ) : (
+          // Keyed on the filter state so the load-more window resets when the
+          // result set changes.
+          <CaseTable key={buildCasesSearchString(filters)} rows={rows} />
+        )}
+      </CaseFilterBar>
+    </>
   );
 }

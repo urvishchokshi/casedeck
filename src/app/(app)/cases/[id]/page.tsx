@@ -28,6 +28,13 @@ export async function generateMetadata({
   return { title: data?.title ?? "Case" };
 }
 
+/** "Beer Manufacturer" → ["Beer", "Manufacturer"]: lead + accent-blue last word. */
+function splitTitle(title: string): [string, string] {
+  const words = title.trim().split(/\s+/);
+  const last = words.pop() ?? "";
+  return [words.length > 0 ? words.join(" ") + " " : "", last];
+}
+
 export default async function CaseDetailPage({
   params,
 }: {
@@ -93,51 +100,56 @@ export default async function CaseDetailPage({
   const promptText = c.prompt ?? c.transcript[0]?.text ?? null;
   const transcriptTurns = c.prompt ? c.transcript : c.transcript.slice(1);
 
-  return (
-    <div className="mx-auto max-w-[820px]">
-      <Link
-        href="/cases"
-        className="mb-4 inline-block text-[13px] font-semibold text-[var(--muted)] hover:text-[var(--ink)]"
-      >
-        ← Case library
-      </Link>
+  const [titleLead, titleLast] = splitTitle(c.title);
 
-      <div className="mb-[22px] flex flex-wrap items-start justify-between gap-6">
-        <div className="min-w-0">
-          <p className="mb-2 font-[family-name:var(--font-mono)] text-[12px] font-medium text-[var(--muted)]">
-            {c.casebook?.name ?? "Unknown casebook"} · p. {c.source_start_page}
-          </p>
-          <h1 className="mb-3 text-[44px] text-[var(--ink)]">{c.title}</h1>
-          <div className="flex flex-wrap gap-[7px]">
-            {c.case_types.map((t, i) => (
-              <Pill key={`type-${t}-${i}`} tone="accent">
-                {t}
-              </Pill>
-            ))}
-            {c.industry && <Pill>{c.industry}</Pill>}
-            {c.company && <Pill>{c.company}</Pill>}
-            {c.difficulty && <Pill>{c.difficulty}</Pill>}
-            <RatingPill avg={c.avg_rating} count={c.rating_count} />
-            {c.tags_inferred && (
-              <Pill className="text-[var(--muted)]">tags inferred</Pill>
-            )}
-            {c.extra_tags.map((t, i) => (
-              <Pill key={`extra-${t}-${i}`} className="text-[var(--muted)]">
-                {t}
-              </Pill>
-            ))}
-          </div>
-        </div>
+  return (
+    <>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link
+          href="/cases"
+          className="flex h-9 items-center gap-2 whitespace-nowrap rounded-[var(--rs)] border border-[var(--line-ctl)] bg-[var(--card)] px-3.5 text-[12.5px] font-semibold text-[var(--slate)] transition-colors hover:border-[var(--line-hover)] hover:text-[var(--accent)]"
+        >
+          ← Case library
+        </Link>
         <CaseActions caseId={c.id} progress={progress} />
       </div>
 
-      <div className="flex flex-col gap-[22px]">
+      <div className="pb-0.5 pt-1.5 text-center">
+        <p className="text-[12.5px] text-[var(--muted-2)]">
+          {c.casebook?.name ?? "Unknown casebook"} · p. {c.source_start_page}
+        </p>
+        <h1 className="mx-auto mt-2 max-w-[900px] text-[clamp(30px,7vw,52px)] leading-[1.04] tracking-[-0.03em]">
+          {titleLead}
+          <span className="text-[var(--accent)]">{titleLast}</span>
+        </h1>
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-[7px]">
+          {c.case_types.map((t, i) => (
+            <Pill key={`type-${t}-${i}`} tone={i === 0 ? "accent" : "chip"}>
+              {t}
+            </Pill>
+          ))}
+          {c.industry && <Pill>{c.industry}</Pill>}
+          {c.company && <Pill>{c.company}</Pill>}
+          {c.difficulty && <Pill>{c.difficulty}</Pill>}
+          <RatingPill avg={c.avg_rating} count={c.rating_count} />
+          {c.tags_inferred && (
+            <Pill className="text-[var(--muted-2)]">tags inferred</Pill>
+          )}
+          {c.extra_tags.map((t, i) => (
+            <Pill key={`extra-${t}-${i}`} className="text-[var(--muted-2)]">
+              {t}
+            </Pill>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-4">
         {promptText && (
-          <section className="rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] px-6 py-[22px] [box-shadow:var(--sh)]">
-            <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-[0.07em] text-[var(--accent)]">
+          <section className="rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] px-6 py-[22px] [box-shadow:var(--sh)] max-desk:px-4">
+            <p className="mb-3 text-[10.5px] font-bold uppercase tracking-[0.1em] text-[var(--accent)]">
               Prompt
             </p>
-            <p className="whitespace-pre-line text-[17px] leading-[1.6]">
+            <p className="whitespace-pre-line text-[16px] leading-[1.6] text-[var(--ink)] [text-wrap:pretty]">
               {promptText}
             </p>
           </section>
@@ -147,7 +159,9 @@ export default async function CaseDetailPage({
 
         {c.exhibit_image_urls.length > 0 && (
           <section>
-            <h2 className="mb-2.5 text-[24px] text-[var(--ink)]">Exhibits</h2>
+            <h2 className="mb-2.5 px-0.5 text-[19px] tracking-[-0.015em]">
+              Exhibits
+            </h2>
             <div className="flex flex-col gap-3.5">
               {c.exhibit_image_urls.map((path, i) => (
                 <ImageCard
@@ -162,7 +176,12 @@ export default async function CaseDetailPage({
 
         {c.solution_image_urls.length > 0 && (
           <section>
-            <h2 className="mb-2.5 text-[24px] text-[var(--ink)]">Solution</h2>
+            <div className="mb-2.5 flex items-center justify-between gap-3 px-0.5">
+              <h2 className="text-[19px] tracking-[-0.015em]">Solution</h2>
+              <span className="text-[12px] text-[var(--muted-2)]">
+                From the casebook
+              </span>
+            </div>
             <div className="flex flex-col gap-3.5">
               {c.solution_image_urls.map((path, i) => (
                 <ImageCard
@@ -175,6 +194,6 @@ export default async function CaseDetailPage({
           </section>
         )}
       </div>
-    </div>
+    </>
   );
 }

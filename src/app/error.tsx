@@ -24,9 +24,7 @@ export default function RootError({
       </div>
       <Button onClick={() => retry()}>Try again</Button>
       {error.digest && (
-        <p className="text-[11px] text-[var(--muted)] font-[family-name:var(--font-mono)]">
-          Ref: {error.digest}
-        </p>
+        <p className="text-[11px] text-[var(--muted-2)]">Ref: {error.digest}</p>
       )}
     </div>
   );

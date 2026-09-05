@@ -1,5 +1,4 @@
-import { PageHeader } from "@/components/PageHeader";
-import { Card } from "@/components/ui/Card";
+import { PageTitle } from "@/components/PageTitle";
 import { Pill } from "@/components/ui/Pill";
 import { createClient } from "@/lib/supabase/server";
 import type { MatchProfile, ModePref, Profile } from "@/lib/types";
@@ -15,16 +14,8 @@ interface MatchRow extends MatchProfile {
 const MODE_LABELS: Record<ModePref, string> = {
   online: "Online",
   offline: "Offline",
-  both: "Both",
+  both: "Online or offline",
 };
-
-// Same shape as the non-exported helper in (app)/layout.tsx.
-function initialsOf(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  const first = parts[0]?.[0] ?? "";
-  const second = parts.length > 1 ? parts[parts.length - 1][0] : "";
-  return (first + second).toUpperCase() || "?";
-}
 
 function displayNameOf(row: MatchRow): string {
   return row.profile.full_name?.trim() || row.profile.email.split("@")[0];
@@ -58,33 +49,41 @@ export default async function MatchPage() {
     .sort((a, b) => Number(a.status === "busy") - Number(b.status === "busy"));
 
   return (
-    <div>
-      <PageHeader
-        title="Find a partner"
-        subtitle="Practicing with the same person every time builds blind spots — mix it up."
-      />
+    <>
+      <PageTitle plain="Find a " accent="Partner" />
 
       <MyMatchCard profile={mine ? stripEmbed(mine) : null} />
 
-      {others.length === 0 ? (
-        <Card className="grid place-items-center px-6 py-16 text-center">
-          <div>
-            <p className="text-[17px] font-semibold text-[var(--ink)]">
-              No cards yet — be the first
-            </p>
-            <p className="mt-1 text-[14px] text-[var(--muted)]">
-              Add your card above and other students will find you here.
-            </p>
-          </div>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {others.map((row) => (
-            <PartnerCard key={row.user_id} row={row} />
-          ))}
+      <div className="flex flex-col rounded-[20px] bg-[var(--card)] p-1.5 [box-shadow:var(--sh)]">
+        <div className="flex flex-col items-center gap-3 px-4 pb-4 pt-[18px]">
+          <span className="text-[22px] font-bold tracking-[-0.02em] text-[var(--heading)]">
+            {others.length}{" "}
+            <span className="text-[var(--accent)]">
+              partner{others.length === 1 ? "" : "s"}
+            </span>
+          </span>
         </div>
-      )}
-    </div>
+
+        {others.length === 0 ? (
+          <div className="grid place-items-center px-6 pb-16 pt-8 text-center">
+            <div>
+              <p className="text-[17px] font-semibold text-[var(--ink)]">
+                No cards yet — be the first
+              </p>
+              <p className="mt-1 text-[14px] text-[var(--muted)]">
+                Add your card above and other students will find you here.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(330px,1fr))] gap-4 px-3 pb-4 max-desk:grid-cols-1">
+            {others.map((row) => (
+              <PartnerCard key={row.user_id} row={row} />
+            ))}
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -99,39 +98,61 @@ function PartnerCard({ row }: { row: MatchRow }) {
   const available = row.status === "available";
 
   return (
-    <Card className="flex flex-col gap-3.5">
-      <div className="flex items-start justify-between gap-2.5">
-        <div className="flex items-center gap-[11px]">
-          <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-[var(--amber-50)] text-[14px] font-bold text-[var(--amber)]">
-            {initialsOf(name)}
+    <div className="flex flex-col gap-[18px] rounded-[var(--r)] border border-[var(--line-card)] bg-[var(--card)] p-[22px] transition-[border-color,box-shadow] [box-shadow:var(--sh)] hover:border-[var(--line-card-hover)] hover:[box-shadow:var(--sh-card-hover)]">
+      <div className="flex items-start gap-2.5">
+        <div className="flex min-w-0 flex-1 items-baseline gap-2">
+          <h2
+            className="truncate text-[19px] tracking-[-0.015em]"
+            title={name}
+          >
+            {name}
+          </h2>
+          <span className="flex-none whitespace-nowrap text-[13px] text-[var(--muted-2)]">
+            · {row.campus}
           </span>
-          <div>
-            <h2 className="font-[family-name:var(--font-ui)] text-[16px] font-semibold leading-tight tracking-[-0.01em] text-[var(--ink)]">
-              {name}
-            </h2>
-            <p className="text-[12px] font-medium text-[var(--muted)]">
-              {row.workex_function} · {row.workex_industry}
-            </p>
-          </div>
         </div>
-        <span className="mt-1 flex shrink-0 items-center gap-1.5">
-          {/* Busy uses --amber (an active "occupied" signal), not the greyed
-              --status-idle of the old placeholder — deliberate. */}
+        <Pill tone={available ? "done" : "revisit"} className="flex-none">
           <span
-            className={`h-2.5 w-2.5 rounded-full ${
-              available ? "bg-[var(--status-active)]" : "bg-[var(--amber)]"
-            }`}
+            aria-hidden
+            className="h-[6px] w-[6px] rounded-full"
+            style={{
+              background: available ? "var(--done-dot)" : "var(--revisit-dot)",
+            }}
           />
-          <span className="text-[11.5px] font-semibold text-[var(--muted)]">
-            {available ? "Available" : "Busy"}
+          {available ? "Available" : "Busy"}
+        </Pill>
+      </div>
+
+      <div className="flex flex-col gap-[9px] border-t border-[var(--line-inner)] pt-3.5">
+        <div className="flex items-center justify-between gap-2.5">
+          <span className="flex-none text-[13px] text-[var(--muted)]">
+            Industry
           </span>
-        </span>
+          <span className="truncate text-right text-[13.5px] font-semibold text-[var(--heading)]">
+            {row.workex_industry}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-2.5">
+          <span className="flex-none text-[13px] text-[var(--muted)]">
+            Job function
+          </span>
+          <span className="truncate text-right text-[13.5px] font-semibold text-[var(--heading)]">
+            {row.workex_function}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-2.5">
+          <span className="flex-none text-[13px] text-[var(--muted)]">
+            Prefers
+          </span>
+          <span className="whitespace-nowrap text-[13.5px] font-semibold text-[var(--heading)]">
+            {MODE_LABELS[row.mode_preference]}
+          </span>
+        </div>
       </div>
-      <div className="flex flex-wrap gap-1.5">
-        <Pill>{row.campus}</Pill>
-        <Pill>{MODE_LABELS[row.mode_preference]}</Pill>
+
+      <div className="mt-auto">
+        <RevealWhatsApp number={row.whatsapp_number} />
       </div>
-      <RevealWhatsApp number={row.whatsapp_number} />
-    </Card>
+    </div>
   );
 }
