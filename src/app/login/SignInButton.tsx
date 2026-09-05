@@ -14,6 +14,9 @@ export function SignInButton() {
       provider: "azure",
       options: {
         scopes: "email openid profile",
+        // Deliberately the *current* browser origin, not NEXT_PUBLIC_SITE_URL:
+        // the PKCE code verifier is stored by the browser client on this
+        // origin, so coming back to any other host breaks the code exchange.
         redirectTo: `${window.location.origin}/auth/callback`,
       },
     });

@@ -5,8 +5,10 @@ import { isIsbEmail } from "@/lib/auth";
 import { siteOrigin } from "@/lib/site-url";
 
 export async function GET(request: Request) {
-  const { searchParams, origin: requestOrigin } = new URL(request.url);
-  const origin = siteOrigin(requestOrigin);
+  const { searchParams } = new URL(request.url);
+  // Resolved from x-forwarded-host first: behind Vercel's proxy the origin of
+  // `request.url` can be the internal http://localhost:3000.
+  const origin = siteOrigin(request);
   const fail = () => NextResponse.redirect(`${origin}/login?error=auth`);
 
   try {

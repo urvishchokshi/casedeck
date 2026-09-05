@@ -37,7 +37,9 @@ Checklist for a fresh production deployment:
    - `NEXT_PUBLIC_SUPABASE_URL` — project URL from Supabase → Settings → API
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — public anon key
    - `SUPABASE_SERVICE_ROLE_KEY` — server-only; used by the auth callback to delete non-ISB sign-ups. **Required in practice**: if unset the callback won't 500, but undeleted non-ISB accounts can query the Supabase API directly with the anon key (RLS grants authenticated users read on shared content and match profiles) — the app proxy is not a boundary for that surface
-   - `NEXT_PUBLIC_SITE_URL` — the canonical production URL, no trailing slash (e.g. `https://casedeck.example.com`). Required: auth redirects and metadata derive from it. Previews fall back to `VERCEL_URL` automatically.
+   - `NEXT_PUBLIC_SITE_URL` — the canonical production URL, no trailing slash (e.g. `https://casedeck.example.com`). Required: metadata derives from it, and it backs auth redirects. Previews fall back to `VERCEL_URL` automatically.
+     - ⚠️ **`NEXT_PUBLIC_*` vars are inlined at build time.** Adding or changing this value in the Vercel dashboard does nothing until you **redeploy** — the running bundle keeps the value it was built with (or `undefined`), even though the dashboard shows it set. A `siteOrigin: NEXT_PUBLIC_SITE_URL is not set in this build` warning means exactly that; look for it in the **build log** first (it fires at module scope via `metadataBase`), then on lambda cold starts.
+     - Auth redirect origins resolve `x-forwarded-host` first (see `src/lib/site-url.ts`), so login still lands on the right host even if this var is missing — but set it anyway, since metadata derives from it alone.
 2. **Supabase → Authentication → URL Configuration**
    - Site URL = the production URL
    - Redirect URLs must include `https://<domain>/auth/callback` (keep `http://localhost:3000/auth/callback` for local dev)

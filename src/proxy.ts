@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { User } from "@supabase/supabase-js";
 import { isIsbEmail } from "@/lib/auth";
+import { requestOrigin } from "@/lib/site-url";
 
 const PUBLIC_PATHS = ["/login", "/auth/callback", "/api/health"];
 
@@ -53,8 +54,12 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const redirectTo = (path: string, search = "") => {
-    const url = request.nextUrl.clone();
-    url.pathname = path;
+    // Forwarded host first (behind Vercel's proxy request.url can carry the
+    // internal localhost origin), else the request's own URL. Deliberately not
+    // siteOrigin(): a redirect to a *configured* host could differ from the one
+    // the browser is on, stranding the session cookies copied over below.
+    const url = new URL(path, requestOrigin(request) ?? request.url);
+    // Assigned rather than concatenated so both "?a=b" and "a=b" normalize.
     url.search = search;
     const redirect = NextResponse.redirect(url);
     // Carry over any refreshed/cleared session cookies.
