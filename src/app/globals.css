@@ -258,6 +258,18 @@ a:focus-visible {
   }
 }
 
+/* Mobile nav drawer panel — slides in from the left edge; opacity comes from
+   the fading backdrop (same split as dialogs). */
+.cd-slide-in-left {
+  animation: cd-slide-in-left var(--t-med) var(--ease-out) both;
+}
+
+@keyframes cd-slide-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
 /* Bar fills — a from-only keyframe animates 0 → the element's inline width,
    so server-rendered bars animate without becoming client components. */
 .cd-grow {

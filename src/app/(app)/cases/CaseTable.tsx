@@ -33,7 +33,7 @@ const gridCols =
   "desk:grid desk:min-w-[900px] desk:grid-cols-[minmax(0,1.6fr)_minmax(0,.8fr)_minmax(0,.95fr)_minmax(0,.85fr)_124px_76px_100px] desk:items-center desk:gap-4";
 
 const cellText =
-  "text-[13px] text-[var(--slate)] desk:truncate max-desk:flex max-desk:items-baseline max-desk:gap-2";
+  "min-w-0 text-[13px] text-[var(--slate)] [overflow-wrap:anywhere] desk:truncate max-desk:flex max-desk:items-baseline max-desk:gap-2";
 
 const mobileLabel =
   "hidden text-[11px] font-semibold text-[var(--faint)] max-desk:inline max-desk:flex-none";
@@ -75,10 +75,10 @@ export function CaseTable({ rows }: { rows: CaseTableRow[] }) {
             }${gridCols}`}
           >
             <div className="min-w-0">
-              <div className="truncate text-[14px] font-semibold tracking-[-0.005em]">
+              <div className="text-[14px] font-semibold tracking-[-0.005em] [overflow-wrap:anywhere] desk:truncate">
                 {r.title}
               </div>
-              <div className="mt-[3px] truncate text-[12px] text-[var(--muted-2)]">
+              <div className="mt-[3px] text-[12px] text-[var(--muted-2)] [overflow-wrap:anywhere] desk:truncate">
                 {r.book}
               </div>
             </div>
@@ -98,7 +98,7 @@ export function CaseTable({ rows }: { rows: CaseTableRow[] }) {
               {r.type || <Dash />}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 items-center gap-2 text-[13px] text-[var(--slate)]">
               <span className={mobileLabel}>Difficulty</span>
               {r.difficulty ? (
                 <>
@@ -117,19 +117,20 @@ export function CaseTable({ rows }: { rows: CaseTableRow[] }) {
               )}
             </div>
 
-            <div className="text-[12.5px] text-[var(--muted-2)] max-desk:flex max-desk:items-baseline max-desk:gap-2">
+            <div className="min-w-0 text-[12.5px] text-[var(--muted-2)] [overflow-wrap:anywhere] desk:truncate max-desk:flex max-desk:items-baseline max-desk:gap-2">
               <span className={mobileLabel}>Rating</span>
               {r.rating ?? "New"}
             </div>
 
-            <div className="flex items-center desk:justify-end">
+            <div className="flex items-center gap-2 desk:justify-end">
+              <span className={mobileLabel}>Status</span>
               {r.outcome ? <OutcomePill outcome={r.outcome} /> : <Dash />}
             </div>
           </Link>
         ))}
       </div>
 
-      <div className="flex items-center justify-between gap-3 px-4 py-3.5">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3.5">
         <span className="text-[12px] text-[var(--muted-2)]">
           Showing 1–{shown.length} of {rows.length}
         </span>
@@ -140,7 +141,7 @@ export function CaseTable({ rows }: { rows: CaseTableRow[] }) {
               setAnimateFrom(visible);
               setVisible(visible + PAGE_SIZE);
             }}
-            className="h-[34px] whitespace-nowrap rounded-[var(--rs)] border border-[var(--line-ctl)] bg-[var(--card)] px-4 text-[12.5px] font-semibold text-[var(--slate)] transition-[color,background-color,border-color,transform] active:scale-[0.97] hover:border-[var(--line-hover)]"
+            className="h-[34px] whitespace-nowrap rounded-[var(--rs)] border border-[var(--line-ctl)] bg-[var(--card)] px-4 text-[12.5px] font-semibold text-[var(--slate)] transition-[color,background-color,border-color,transform] active:scale-[0.97] hover:border-[var(--line-hover)] max-desk:h-10"
           >
             Load more
           </button>

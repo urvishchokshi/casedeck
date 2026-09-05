@@ -102,15 +102,16 @@ function PartnerCard({ row }: { row: MatchRow }) {
   return (
     <div className="flex flex-col gap-[18px] rounded-[var(--r)] border border-[var(--line-card)] bg-[var(--card)] p-[22px] transition-[border-color,box-shadow] [box-shadow:var(--sh)] hover:border-[var(--line-card-hover)] hover:[box-shadow:var(--sh-card-hover)]">
       <div className="flex items-start gap-2.5">
-        <div className="flex min-w-0 flex-1 items-baseline gap-2">
+        <div className="flex min-w-0 flex-1 items-baseline gap-2 max-desk:flex-col max-desk:gap-0.5">
           <h2
-            className="truncate text-[19px] tracking-[-0.015em]"
+            className="min-w-0 text-[19px] tracking-[-0.015em] [overflow-wrap:anywhere] desk:truncate"
             title={name}
           >
             {name}
           </h2>
           <span className="flex-none whitespace-nowrap text-[13px] text-[var(--muted-2)]">
-            · {row.campus}
+            <span className="max-desk:hidden">· </span>
+            {row.campus}
           </span>
         </div>
         <Pill tone={available ? "done" : "revisit"} className="flex-none">

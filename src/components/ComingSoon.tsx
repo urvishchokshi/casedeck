@@ -33,7 +33,7 @@ export function ComingSoon({
           {icon}
         </div>
 
-        <h2 className="relative mt-[22px] text-[26px] tracking-[-0.02em]">
+        <h2 className="relative mt-[22px] text-[clamp(20px,5vw,26px)] tracking-[-0.02em]">
           {heading}
         </h2>
         <p className="relative mx-auto mt-2.5 max-w-[420px] text-[14px] leading-[1.55] text-[var(--muted)] [text-wrap:pretty]">

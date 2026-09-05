@@ -25,7 +25,7 @@ export default async function LoginPage({
 
   return (
     <div
-      className="relative flex min-h-screen flex-col overflow-hidden text-[var(--heading)] [background:var(--landing-bg)]"
+      className="relative flex min-h-dvh flex-col overflow-hidden text-[var(--heading)] [background:var(--landing-bg)]"
     >
       {/* Decorative layers — faint grid, concentric circles, drifting glow.
           The #000 inside mask-image is alpha-only (masks ignore hue) — not a

@@ -50,7 +50,7 @@ export function Transcript({ turns }: { turns: TranscriptTurn[] }) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="cd-fade-in w-full rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] px-6 py-4 text-left text-[13.5px] font-semibold text-[var(--muted)] transition-colors [box-shadow:var(--sh)] hover:bg-[var(--row-hover)]"
+          className="cd-fade-in w-full rounded-[var(--r)] border border-[var(--line)] bg-[var(--card)] px-6 py-4 text-left text-[13.5px] font-semibold text-[var(--muted)] transition-colors [box-shadow:var(--sh)] hover:bg-[var(--row-hover)] max-desk:px-4"
         >
           {turns.length} {turns.length === 1 ? "turn" : "turns"} · click to
           expand

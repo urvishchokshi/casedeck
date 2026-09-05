@@ -159,7 +159,7 @@ function Segmented<T extends string>({
 }
 
 const inputClasses =
-  "h-10 w-full rounded-[var(--rs)] border border-[var(--line-ctl)] bg-[var(--card)] px-[13px] text-[13.5px] text-[var(--ink)] placeholder:text-[var(--muted-2)]";
+  "h-10 w-full rounded-[var(--rs)] border border-[var(--line-ctl)] bg-[var(--card)] px-[13px] text-[13.5px] text-[var(--ink)] placeholder:text-[var(--muted-2)] max-desk:h-11 max-desk:text-[16px]";
 const fieldLabelClasses =
   "mb-[7px] text-[12px] font-semibold text-[var(--muted)]";
 
@@ -221,7 +221,7 @@ function ProfileForm({
 
   return (
     <div className="mt-4 flex flex-col gap-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 desk:grid-cols-3">
         <div>
           <p className={fieldLabelClasses}>WhatsApp number</p>
           <input
@@ -393,7 +393,7 @@ function RemoveCardDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="cd-fade-in fixed inset-0 z-50 grid place-items-center bg-[var(--overlay)] p-6 backdrop-blur-[2px]"
+      className="cd-fade-in fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-[var(--overlay)] p-6 backdrop-blur-[2px]"
       onClick={closeUnlessPending}
     >
       <div
@@ -403,7 +403,7 @@ function RemoveCardDialog({ onClose }: { onClose: () => void }) {
         aria-modal="true"
         aria-label="Remove your card"
         onClick={(e) => e.stopPropagation()}
-        className="cd-scale-in flex w-[440px] max-w-full flex-col gap-5 rounded-[var(--r-modal)] bg-[var(--card)] p-[26px] outline-none [box-shadow:var(--sh-modal)]"
+        className="cd-scale-in flex max-h-[calc(100dvh-48px)] w-[440px] max-w-full flex-col gap-5 overflow-y-auto rounded-[var(--r-modal)] bg-[var(--card)] p-[26px] outline-none [box-shadow:var(--sh-modal)]"
       >
         <div>
           <h3 className="mb-1 text-[24px] tracking-[-0.02em]">

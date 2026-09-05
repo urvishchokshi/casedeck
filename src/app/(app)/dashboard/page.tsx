@@ -51,9 +51,11 @@ function StatCard({
   );
 }
 
-function Bar({ pct }: { pct: number }) {
+function Bar({ pct, className = "" }: { pct: number; className?: string }) {
   return (
-    <div className="h-2 flex-1 overflow-hidden rounded-[5px] bg-[var(--bar-track)]">
+    <div
+      className={`h-2 flex-1 overflow-hidden rounded-[5px] bg-[var(--bar-track)] ${className}`}
+    >
       <div
         className="cd-grow h-2 rounded-[5px] bg-[var(--accent)]"
         // Dynamic widths can't be Tailwind classes.
@@ -178,15 +180,19 @@ export default async function DashboardPage() {
               ) : (
                 <div className="flex flex-col gap-3">
                   {typeRows.map((r) => (
-                    <div key={r.label} className="flex items-center gap-3.5">
+                    <div
+                      key={r.label}
+                      className="flex items-center gap-3.5 max-desk:grid max-desk:grid-cols-[minmax(0,1fr)_auto] max-desk:gap-x-3 max-desk:gap-y-1.5"
+                    >
                       <span
-                        className="w-24 flex-none truncate text-[13px] text-[var(--slate)]"
+                        className="min-w-0 truncate text-[13px] text-[var(--slate)] desk:w-24 desk:flex-none"
                         title={r.label}
                       >
                         {r.label}
                       </span>
                       <Bar
                         pct={r.total > 0 ? (r.attempted / r.total) * 100 : 0}
+                        className="max-desk:order-last max-desk:col-span-2"
                       />
                       <span className="flex-none text-[12.5px] font-semibold text-[var(--muted)]">
                         {r.attempted}/{r.total}
@@ -208,14 +214,20 @@ export default async function DashboardPage() {
               ) : (
                 <div className="flex flex-col gap-3">
                   {industryRows.map((r) => (
-                    <div key={r.label} className="flex items-center gap-3.5">
+                    <div
+                      key={r.label}
+                      className="flex items-center gap-3.5 max-desk:grid max-desk:grid-cols-[minmax(0,1fr)_auto] max-desk:gap-x-3 max-desk:gap-y-1.5"
+                    >
                       <span
-                        className="w-[118px] flex-none truncate text-[13px] text-[var(--slate)]"
+                        className="min-w-0 truncate text-[13px] text-[var(--slate)] desk:w-[118px] desk:flex-none"
                         title={r.label}
                       >
                         {r.label}
                       </span>
-                      <Bar pct={r.avg * 10} />
+                      <Bar
+                        pct={r.avg * 10}
+                        className="max-desk:order-last max-desk:col-span-2"
+                      />
                       <span className="flex-none text-[12.5px] text-[var(--muted-2)]">
                         <span className="font-bold text-[var(--heading)]">
                           {r.avg.toFixed(1)}
@@ -238,23 +250,23 @@ export default async function DashboardPage() {
                 {weakest.map((w) => (
                   <div
                     key={`${w.dimension}-${w.label}`}
-                    className="flex flex-wrap items-center gap-3.5 rounded-[14px] border border-[var(--bar-track)] bg-[var(--tile)] px-4 py-3.5"
+                    className="flex flex-wrap items-center gap-3.5 rounded-[14px] border border-[var(--bar-track)] bg-[var(--tile)] px-4 py-3.5 max-desk:grid max-desk:grid-cols-[minmax(0,1fr)_auto] max-desk:gap-x-3 max-desk:gap-y-2.5"
                   >
                     <span
-                      className="min-w-0 truncate text-[15px] font-bold text-[var(--heading)]"
+                      className="min-w-0 truncate text-[15px] font-bold text-[var(--heading)] max-desk:order-1"
                       title={w.label}
                     >
                       {w.label}
                     </span>
-                    <span className="rounded-[7px] bg-[var(--chip-dim)] px-[9px] py-1 text-[11.5px] font-semibold text-[var(--muted)]">
+                    <span className="rounded-[7px] bg-[var(--chip-dim)] px-[9px] py-1 text-[11.5px] font-semibold text-[var(--muted)] max-desk:order-3 max-desk:justify-self-start">
                       {w.dimension}
                     </span>
-                    <span className="ml-auto text-[22px] font-bold tracking-[-0.02em] text-[var(--weak)]">
+                    <span className="ml-auto text-[22px] font-bold tracking-[-0.02em] text-[var(--weak)] max-desk:order-2">
                       {w.avg.toFixed(1)}
                     </span>
                     <Link
                       href={w.href}
-                      className="inline-flex h-9 items-center whitespace-nowrap rounded-[var(--rs)] border border-[var(--line-ctl)] bg-[var(--card)] px-4 text-[12.5px] font-semibold text-[var(--accent)] transition-[color,background-color,border-color,transform] active:scale-[0.97] hover:border-[var(--accent)]"
+                      className="inline-flex h-9 items-center whitespace-nowrap rounded-[var(--rs)] border border-[var(--line-ctl)] bg-[var(--card)] px-4 text-[12.5px] font-semibold text-[var(--accent)] transition-[color,background-color,border-color,transform] active:scale-[0.97] hover:border-[var(--accent)] max-desk:order-4 max-desk:col-span-2 max-desk:h-10 max-desk:justify-center"
                     >
                       Practice →
                     </Link>

@@ -33,7 +33,7 @@ export function CaseActions({
     });
 
   return (
-    <div className="flex flex-none flex-col items-end gap-1.5">
+    <div className="flex min-w-0 flex-col items-end gap-1.5 max-desk:w-full max-desk:items-stretch">
       <div className="flex flex-wrap items-center gap-2">
         {/* Mark done: opens the log dialog preselected to "done"; when
             already done, clicking unmarks. */}
@@ -164,7 +164,7 @@ function LogCaseDialog({
 
   return (
     <div
-      className="cd-fade-in fixed inset-0 z-50 grid place-items-center bg-[var(--overlay)] p-6 backdrop-blur-[2px]"
+      className="cd-fade-in fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-[var(--overlay)] p-6 backdrop-blur-[2px]"
       onClick={closeUnlessPending}
     >
       <div
@@ -174,7 +174,7 @@ function LogCaseDialog({
         aria-modal="true"
         aria-label="Log this case"
         onClick={(e) => e.stopPropagation()}
-        className="cd-scale-in flex w-[440px] max-w-full flex-col gap-5 rounded-[var(--r-modal)] bg-[var(--card)] p-[26px] outline-none [box-shadow:var(--sh-modal)]"
+        className="cd-scale-in flex max-h-[calc(100dvh-48px)] w-[440px] max-w-full flex-col gap-5 overflow-y-auto rounded-[var(--r-modal)] bg-[var(--card)] p-[26px] outline-none [box-shadow:var(--sh-modal)]"
       >
         <div>
           <h3 className="mb-1 text-[24px] tracking-[-0.02em]">

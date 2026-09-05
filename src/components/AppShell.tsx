@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Brand } from "@/components/Brand";
@@ -127,21 +127,24 @@ function NavLinks({
   counts,
   collapsed,
   animateWidth,
+  className = "",
+  onNavigate,
 }: {
   counts: ShellCounts;
   collapsed: boolean;
   animateWidth: boolean;
+  className?: string;
+  onNavigate?: () => void;
 }) {
   const pathname = usePathname();
-  // Labels/badges collapse away only on desktop; the mobile top row always
-  // shows them (it scrolls horizontally).
+  // Labels/badges collapse away only on desktop; the drawer always shows them.
   const labelClass = collapsed ? "desk:hidden" : "";
 
   return (
     <nav
-      className={`flex flex-row gap-1 desk:flex-col ${
+      className={`flex flex-col gap-1 ${
         collapsed ? "desk:items-center" : ""
-      }`}
+      } ${className}`}
     >
       {navItems.map(({ label, href, icon, badge, soon }) => {
         const active = pathname === href || pathname.startsWith(`${href}/`);
@@ -150,6 +153,7 @@ function NavLinks({
             key={href}
             href={href}
             title={label}
+            onClick={onNavigate}
             aria-current={active ? "page" : undefined}
             className={`flex h-[42px] flex-none items-center gap-[11px] overflow-hidden rounded-xl px-3 text-[13.5px] ${
               animateWidth
@@ -199,9 +203,11 @@ function NavLinks({
 function ProfileCard({
   user,
   collapsed,
+  className = "",
 }: {
   user: ShellUser;
   collapsed: boolean;
+  className?: string;
 }) {
   const [signingOut, setSigningOut] = useState(false);
 
@@ -217,9 +223,9 @@ function ProfileCard({
 
   return (
     <div
-      className={`ml-auto flex flex-none items-center gap-[11px] rounded-2xl bg-[var(--card)] p-3 [box-shadow:var(--sh)] desk:ml-0 desk:mt-auto ${
+      className={`flex flex-none items-center gap-[11px] rounded-2xl bg-[var(--card)] p-3 [box-shadow:var(--sh)] desk:mt-auto ${
         collapsed ? "desk:justify-center desk:p-2.5" : ""
-      }`}
+      } ${className}`}
     >
       <span
         title={user.name}
@@ -261,9 +267,25 @@ export function AppShell({
   // Width transitions are enabled only once the user toggles, so the
   // localStorage-driven collapse on mount stays instant (no glide on load).
   const [animateWidth, setAnimateWidth] = useState(false);
+  // Mobile-only slide-out drawer (below desk:).
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const hamburgerRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (window.localStorage.getItem(COLLAPSE_KEY) === "1") setCollapsed(true);
   }, []);
+  useEffect(() => {
+    if (!drawerOpen) return;
+    drawerRef.current?.focus();
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setDrawerOpen(false);
+        hamburgerRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [drawerOpen]);
   const toggle = () => {
     setAnimateWidth(true);
     setCollapsed((c) => {
@@ -271,15 +293,19 @@ export function AppShell({
       return !c;
     });
   };
+  const closeDrawer = () => {
+    setDrawerOpen(false);
+    hamburgerRef.current?.focus();
+  };
 
   return (
     <div
-      className="min-h-screen p-[clamp(12px,3vw,26px)]"
+      className="min-h-dvh p-[clamp(12px,3vw,26px)]"
       style={{ background: "var(--canvas-grad)" }}
     >
-      <div className="flex min-h-[calc(100vh-2*clamp(12px,3vw,26px))] flex-col gap-4 rounded-[var(--r-shell)] bg-[var(--shell)] p-4 [box-shadow:var(--sh-shell)] desk:flex-row">
+      <div className="flex min-h-[calc(100dvh-2*clamp(12px,3vw,26px))] flex-col gap-4 rounded-[var(--r-shell)] bg-[var(--shell)] p-4 [box-shadow:var(--sh-shell)] desk:flex-row">
         <aside
-          className={`flex w-full flex-none flex-row items-center gap-2.5 overflow-x-auto desk:flex-col desk:items-stretch desk:gap-[18px] desk:overflow-visible ${
+          className={`flex w-full flex-none flex-col gap-2.5 desk:gap-[18px] ${
             collapsed ? "desk:w-[72px]" : "desk:w-[250px]"
           } ${
             animateWidth
@@ -288,10 +314,10 @@ export function AppShell({
           }`}
         >
           <div
-            className={`flex min-h-[32px] flex-none items-center justify-center gap-[9px] desk:px-1 desk:pt-1 ${
+            className={`flex min-h-[32px] flex-none items-center justify-between gap-[9px] desk:px-1 desk:pt-1 ${
               collapsed
-                ? "desk:flex-col desk:gap-2.5 desk:px-0"
-                : "desk:justify-between"
+                ? "desk:flex-col desk:justify-center desk:gap-2.5 desk:px-0"
+                : ""
             }`}
           >
             <Brand
@@ -299,6 +325,24 @@ export function AppShell({
                 collapsed ? "desk:hidden" : ""
               }`}
             />
+            <button
+              ref={hamburgerRef}
+              type="button"
+              onClick={() => setDrawerOpen(true)}
+              aria-label="Open menu"
+              aria-expanded={drawerOpen}
+              aria-controls="mobile-drawer"
+              className="-mr-1.5 grid h-11 w-11 flex-none place-items-center rounded-xl text-[var(--slate)] transition-colors hover:bg-[var(--nav-hover)] hover:text-[var(--accent)] desk:hidden"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path
+                  d="M3 5.5h14M3 10h14M3 14.5h14"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
             <button
               type="button"
               onClick={toggle}
@@ -314,10 +358,61 @@ export function AppShell({
             counts={counts}
             collapsed={collapsed}
             animateWidth={animateWidth}
+            className="max-desk:hidden"
           />
 
-          <ProfileCard user={user} collapsed={collapsed} />
+          <ProfileCard
+            user={user}
+            collapsed={collapsed}
+            className="max-desk:hidden"
+          />
         </aside>
+
+        {drawerOpen && (
+          <div
+            className="cd-fade-in fixed inset-0 z-50 bg-[var(--overlay)] backdrop-blur-[2px] desk:hidden"
+            onClick={closeDrawer}
+          >
+            <div
+              ref={drawerRef}
+              id="mobile-drawer"
+              tabIndex={-1}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Menu"
+              onClick={(e) => e.stopPropagation()}
+              className="cd-slide-in-left flex h-full w-[280px] max-w-[85vw] flex-col gap-[18px] overflow-y-auto bg-[var(--shell)] p-4 outline-none [box-shadow:var(--sh-shell)]"
+            >
+              <div className="flex min-h-[32px] flex-none items-center justify-between gap-[9px] px-1 pt-1">
+                <Brand wordmarkClassName="text-[16px] font-bold tracking-[-0.02em]" />
+                <button
+                  type="button"
+                  onClick={closeDrawer}
+                  aria-label="Close menu"
+                  className="-mr-1.5 grid h-11 w-11 flex-none place-items-center rounded-xl text-[var(--slate)] transition-colors hover:bg-[var(--nav-hover)] hover:text-[var(--accent)]"
+                >
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                    <path
+                      d="M5 5l10 10M15 5L5 15"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <NavLinks
+                counts={counts}
+                collapsed={false}
+                animateWidth={false}
+                onNavigate={closeDrawer}
+              />
+
+              <ProfileCard user={user} collapsed={false} className="mt-auto" />
+            </div>
+          </div>
+        )}
 
         <main className="flex min-w-0 flex-1 flex-col gap-4">{children}</main>
       </div>

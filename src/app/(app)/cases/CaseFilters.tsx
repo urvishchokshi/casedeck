@@ -145,7 +145,7 @@ export function CaseFilterBar({
         <div
           role="group"
           aria-label="Status"
-          className="flex gap-[3px] rounded-[14px] bg-[var(--card)] p-1 [box-shadow:var(--sh)]"
+          className="flex gap-[3px] rounded-[14px] bg-[var(--card)] p-1 [box-shadow:var(--sh)] max-desk:w-full"
         >
           {statusSegments.map((s) => (
             <button
@@ -153,7 +153,7 @@ export function CaseFilterBar({
               type="button"
               aria-pressed={segment === s.value}
               onClick={() => push(segmentState[s.value])}
-              className={`whitespace-nowrap rounded-[11px] px-5 py-[9px] text-[13.5px] transition-colors max-desk:px-3.5 ${
+              className={`whitespace-nowrap rounded-[11px] px-5 py-[9px] text-[13.5px] transition-colors max-desk:flex-1 max-desk:px-1 max-desk:py-[11px] max-desk:text-[12.5px] ${
                 segment === s.value
                   ? "bg-[var(--seg-active)] font-semibold text-[var(--ink)]"
                   : "text-[var(--muted-2)] hover:text-[var(--ink)]"
@@ -197,7 +197,7 @@ export function CaseFilterBar({
                   );
                 }, 300);
               }}
-              className="h-[38px] w-full rounded-[var(--rs)] border border-[var(--line-ctl)] bg-[var(--card)] pl-9 pr-[13px] text-[13.5px] text-[var(--ink)] placeholder:text-[var(--muted-2)]"
+              className="h-[38px] w-full rounded-[var(--rs)] border border-[var(--line-ctl)] bg-[var(--card)] pl-9 pr-[13px] text-[13.5px] text-[var(--ink)] placeholder:text-[var(--muted-2)] max-desk:h-11 max-desk:text-[16px]"
             />
           </div>
 
@@ -374,7 +374,7 @@ function FilterDropdown(props: FilterDropdownProps) {
   };
 
   const optionRowClasses =
-    "flex w-full items-center gap-2.5 rounded-[var(--rs)] px-2.5 py-[7px] text-left text-[13px] text-[var(--ink)] transition-colors hover:bg-[var(--thead)]";
+    "flex w-full items-center gap-2.5 rounded-[var(--rs)] px-2.5 py-[7px] text-left text-[13px] text-[var(--ink)] transition-colors hover:bg-[var(--thead)] max-desk:py-2.5";
 
   return (
     <div ref={containerRef} className="relative max-desk:contents">
@@ -394,7 +394,7 @@ function FilterDropdown(props: FilterDropdownProps) {
             onOpenChange(false);
           }
         }}
-        className={`flex h-8 items-center gap-1.5 whitespace-nowrap rounded-[9px] border px-3 text-[12.5px] transition-colors ${
+        className={`flex h-8 items-center gap-1.5 whitespace-nowrap rounded-[9px] border px-3 text-[12.5px] transition-colors max-desk:h-10 ${
           selectedCount > 0
             ? "border-[var(--accent)] bg-[var(--accent-tint)] font-semibold text-[var(--accent)]"
             : "border-[var(--line)] bg-[var(--shell)] text-[var(--slate)] hover:border-[var(--line-hover)] hover:bg-[var(--card)]"
@@ -425,7 +425,7 @@ function FilterDropdown(props: FilterDropdownProps) {
               placeholder="Search…"
               value={optionQuery}
               onChange={(e) => setOptionQuery(e.target.value)}
-              className="mb-1 h-8 w-full shrink-0 rounded-[var(--rs)] border border-[var(--line-ctl)] bg-[var(--card)] px-2.5 text-[13px] text-[var(--ink)] placeholder:text-[var(--muted-2)]"
+              className="mb-1 h-8 w-full shrink-0 rounded-[var(--rs)] border border-[var(--line-ctl)] bg-[var(--card)] px-2.5 text-[13px] text-[var(--ink)] placeholder:text-[var(--muted-2)] max-desk:h-10 max-desk:text-[16px]"
             />
           )}
           <div
@@ -567,11 +567,13 @@ function ActivePills({
           type="button"
           aria-label={`Remove ${pill.dim} filter ${pill.value}`}
           onClick={pill.remove}
-          className="cd-pop-in flex items-center gap-1 rounded-[9px] bg-[var(--accent-tint)] py-[5px] pl-2.5 pr-[7px] text-[12px] transition-colors hover:bg-[var(--nav-hover)]"
+          className="cd-pop-in flex min-w-0 max-w-full items-center gap-1 rounded-[9px] bg-[var(--accent-tint)] py-[5px] pl-2.5 pr-[7px] text-[12px] transition-colors hover:bg-[var(--nav-hover)] max-desk:py-2"
         >
-          <span className="text-[var(--muted-2)]">{pill.dim}</span>
-          <span className="font-semibold text-[var(--ink)]">{pill.value}</span>
-          <X size={12} className="text-[var(--muted-2)]" />
+          <span className="flex-none text-[var(--muted-2)]">{pill.dim}</span>
+          <span className="min-w-0 truncate font-semibold text-[var(--ink)]">
+            {pill.value}
+          </span>
+          <X size={12} className="shrink-0 text-[var(--muted-2)]" />
         </button>
       ))}
     </>

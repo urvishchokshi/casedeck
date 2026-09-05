@@ -199,7 +199,10 @@ export default async function CasesPage({
       label: "Casebook",
       param: "casebook" as const,
       options: [
-        ...casebooks.map((cb) => ({ value: cb.slug, label: cb.name })),
+        ...casebooks.map((cb) => ({
+          value: cb.slug,
+          label: shortBookName(cb.name),
+        })),
         ...filters.casebooks
           .filter((slug) => !casebooks.some((cb) => cb.slug === slug))
           .map((slug) => ({ value: slug, label: slug })),

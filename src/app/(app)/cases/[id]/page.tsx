@@ -120,7 +120,7 @@ export default async function CaseDetailPage({
         <p className="text-[12.5px] text-[var(--muted-2)]">
           {c.casebook?.name ?? "Unknown casebook"} · p. {c.source_start_page}
         </p>
-        <h1 className="mx-auto mt-2 max-w-[900px] text-[clamp(30px,7vw,52px)] leading-[1.04] tracking-[-0.03em]">
+        <h1 className="mx-auto mt-2 max-w-[900px] break-words text-[clamp(30px,7vw,52px)] leading-[1.04] tracking-[-0.03em]">
           {titleLead}
           <span className="text-[var(--accent)]">{titleLast}</span>
         </h1>
