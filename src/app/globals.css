@@ -27,8 +27,14 @@
   --dash: #c3d1e2; /* empty-value em-dashes */
 
   /* Surfaces */
-  --canvas: #dceaf7; /* page base behind the gradient */
-  --canvas-grad: linear-gradient(180deg, #d6e7f6 0%, #e8f1fb 45%, #dfe9fb 100%);
+  --canvas: #060a1c; /* ink-navy page base behind the floating shell */
+  --canvas-grad: radial-gradient(
+      80% 55% at 50% -8%,
+      rgba(37, 71, 245, 0.38) 0%,
+      rgba(21, 33, 110, 0.16) 44%,
+      transparent 74%
+    ),
+    #060a1c;
   --shell: #f7fafd; /* the floating app shell + filter-trigger chips */
   --card: #ffffff;
   --thead: #f4f8fd; /* table header, segmented tracks */
@@ -78,7 +84,7 @@
   --r-modal: 18px; /* dialog panels */
 
   /* Shadows */
-  --sh-shell: 0 24px 60px rgba(31, 74, 140, 0.14);
+  --sh-shell: 0 34px 80px rgba(2, 5, 20, 0.55);
   --sh: 0 2px 10px rgba(31, 74, 140, 0.06); /* cards */
   --sh-card-hover: 0 8px 22px rgba(31, 74, 140, 0.13);
   --sh-accent: 0 8px 18px rgba(37, 71, 245, 0.28); /* active nav / primary CTA */
@@ -90,28 +96,36 @@
   /* Striped placeholder for unavailable images */
   --ph: repeating-linear-gradient(135deg, #f4f8fd 0 12px, #eaf1fa 12px 24px);
 
-  /* Landing page composites */
-  --landing-bg: radial-gradient(
-    120% 90% at 50% 118%,
-    #dbe6ff 0%,
-    #eef4fc 48%,
-    #f7fafd 100%
-  );
-  --landing-grid: rgba(13, 19, 48, 0.045);
-  --landing-ring-1: rgba(37, 71, 245, 0.15);
-  --landing-ring-2: rgba(37, 71, 245, 0.09);
-  --landing-glow: radial-gradient(
-    circle,
-    rgba(37, 71, 245, 0.28) 0%,
-    rgba(37, 71, 245, 0.1) 44%,
+  /* Landing page (dark hero) */
+  --landing-bg: #060a1c;
+  --landing-ink: #f2f5ff; /* landing body/headline text */
+  --landing-heading: #ffffff; /* landing wordmark "Case" */
+  --landing-accent: #7f9dff; /* landing accent words on dark */
+  --landing-cta-hover: #3a5cff; /* CTA hover goes lighter on dark ground */
+  --landing-halo: radial-gradient(
+    90% 60% at 50% -6%,
+    rgba(37, 71, 245, 0.42) 0%,
+    rgba(21, 33, 110, 0.18) 42%,
     transparent 72%
   );
-  --landing-corner: radial-gradient(
+  --landing-grid: rgba(160, 185, 255, 0.075);
+  --landing-glow: radial-gradient(
     circle,
-    rgba(120, 160, 255, 0.24) 0%,
-    transparent 68%
+    rgba(60, 100, 255, 0.3) 0%,
+    rgba(60, 100, 255, 0.1) 45%,
+    transparent 72%
   );
-  --sh-cta: 0 14px 30px rgba(37, 71, 245, 0.32);
+  --landing-fade: linear-gradient(
+    180deg,
+    transparent 55%,
+    rgba(6, 10, 28, 0.85) 100%
+  );
+  --landing-card-line: rgba(160, 185, 255, 0.16); /* fan-card borders */
+  --landing-card-line-strong: rgba(160, 185, 255, 0.24);
+  --sh-landing-card: 0 30px 70px rgba(2, 5, 20, 0.6);
+  --sh-landing-card-lg: 0 44px 100px rgba(2, 5, 20, 0.72);
+  --r-hero: 22px; /* center fan card */
+  --sh-cta: 0 16px 40px rgba(37, 71, 245, 0.55);
 
   /* Coming-soon card */
   --sh-soon: 0 8px 30px rgba(31, 74, 140, 0.09);
@@ -199,7 +213,7 @@ a:focus-visible {
 
 /* Slow drift for the landing page's background glow. */
 .cd-drift {
-  animation: cd-drift 16s ease-in-out infinite;
+  animation: cd-drift 18s ease-in-out infinite;
 }
 
 @keyframes cd-drift {
@@ -209,6 +223,90 @@ a:focus-visible {
   }
   50% {
     transform: translate3d(0, -26px, 0) scale(1.06);
+  }
+}
+
+/* Landing screenshot fan — each card fans into its resting tilt on mount,
+   then floats forever around that tilt (the float keyframes carry the same
+   end rotation, so the handoff is seamless). */
+.cd-fan-left {
+  animation:
+    cd-fan-left 0.95s cubic-bezier(0.16, 0.84, 0.3, 1) 0.12s both,
+    cd-float-left 9s ease-in-out 1.1s infinite;
+}
+
+.cd-fan-right {
+  animation:
+    cd-fan-right 0.95s cubic-bezier(0.16, 0.84, 0.3, 1) 0.22s both,
+    cd-float-right 9s ease-in-out 1.2s infinite;
+}
+
+.cd-fan-center {
+  animation:
+    cd-fan-center 0.9s cubic-bezier(0.16, 0.84, 0.3, 1) 0.34s both,
+    cd-float-center 8s ease-in-out 1.3s infinite;
+}
+
+@keyframes cd-fan-left {
+  from {
+    opacity: 0;
+    transform: translate3d(60px, 54px, 0) rotate(0deg) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(-10deg) scale(1);
+  }
+}
+
+@keyframes cd-fan-right {
+  from {
+    opacity: 0;
+    transform: translate3d(-60px, 54px, 0) rotate(0deg) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(10deg) scale(1);
+  }
+}
+
+@keyframes cd-fan-center {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 64px, 0) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes cd-float-left {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-10deg);
+  }
+  50% {
+    transform: translate3d(0, -16px, 0) rotate(-8.5deg);
+  }
+}
+
+@keyframes cd-float-right {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(10deg);
+  }
+  50% {
+    transform: translate3d(0, -16px, 0) rotate(8.5deg);
+  }
+}
+
+@keyframes cd-float-center {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -10px, 0);
   }
 }
 
@@ -287,6 +385,7 @@ a:focus-visible {
   ::before,
   ::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0s !important; /* staggered mounts (landing fan) land instantly */
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }

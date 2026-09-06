@@ -3,10 +3,10 @@ import { Brand } from "@/components/Brand";
 import { buttonBaseClasses, buttonVariantClasses } from "@/components/ui/Button";
 
 // Root-level so it catches unmatched URLs and notFound() calls; renders
-// without the (app) shell, so it carries its own Brand + canvas background.
+// without the (app) shell, so it carries its own Brand + light background.
 export default function NotFound() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-7 bg-[var(--canvas)] px-6">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-7 bg-[var(--shell)] px-6">
       <Brand />
       <div className="text-center">
         <h1 className="text-[44px]">Page not found</h1>

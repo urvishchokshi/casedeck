@@ -13,7 +13,7 @@ export default function RootError({
   retry: () => void;
 }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-7 bg-[var(--canvas)] px-6">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-7 bg-[var(--shell)] px-6">
       <Brand />
       <div className="text-center">
         <h1 className="text-[44px]">Something went wrong</h1>

@@ -5,6 +5,8 @@ interface BrandProps {
   wordmarkClassName?: string;
   /** Render only the mark (collapsed sidebar). */
   markOnly?: boolean;
+  /** Dark-ground wordmark colors (landing page). */
+  onDark?: boolean;
 }
 
 /**
@@ -16,6 +18,7 @@ export function Brand({
   markWidth = 30,
   wordmarkClassName = "text-[16px] font-bold tracking-[-0.02em]",
   markOnly = false,
+  onDark = false,
 }: BrandProps) {
   // Crop constants from the design: a 30×26 window over the image scaled to
   // 128px, offset (-10, -51). Everything scales linearly with markWidth.
@@ -42,9 +45,18 @@ export function Brand({
       </span>
       {!markOnly && (
         <span
-          className={`whitespace-nowrap text-[var(--heading)] ${wordmarkClassName}`}
+          className={`whitespace-nowrap ${
+            onDark ? "text-[var(--landing-heading)]" : "text-[var(--heading)]"
+          } ${wordmarkClassName}`}
         >
-          Case<span className="text-[var(--accent)]">Deck</span>
+          Case
+          <span
+            className={
+              onDark ? "text-[var(--landing-accent)]" : "text-[var(--accent)]"
+            }
+          >
+            Deck
+          </span>
         </span>
       )}
     </span>
