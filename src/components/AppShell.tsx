@@ -128,12 +128,15 @@ function NavLinks({
   collapsed,
   animateWidth,
   className = "",
+  dataTour,
   onNavigate,
 }: {
   counts: ShellCounts;
   collapsed: boolean;
   animateWidth: boolean;
   className?: string;
+  /** Anchor for the first-visit tour (see cases/CaseTour.tsx). */
+  dataTour?: string;
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
@@ -142,6 +145,7 @@ function NavLinks({
 
   return (
     <nav
+      data-tour={dataTour}
       className={`flex flex-col gap-1 ${
         collapsed ? "desk:items-center" : ""
       } ${className}`}
@@ -314,6 +318,9 @@ export function AppShell({
           }`}
         >
           <div
+            // Mobile tour anchor: below desk: the sidebar nav is hidden behind
+            // the drawer, so step 1 spotlights this Brand + hamburger row.
+            data-tour="nav-mobile"
             className={`flex min-h-[32px] flex-none items-center justify-between gap-[9px] desk:px-1 desk:pt-1 ${
               collapsed
                 ? "desk:flex-col desk:justify-center desk:gap-2.5 desk:px-0"
@@ -359,6 +366,7 @@ export function AppShell({
             collapsed={collapsed}
             animateWidth={animateWidth}
             className="max-desk:hidden"
+            dataTour="nav"
           />
 
           <ProfileCard

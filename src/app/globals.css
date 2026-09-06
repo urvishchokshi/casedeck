@@ -127,6 +127,12 @@
   --r-hero: 22px; /* center fan card */
   --sh-cta: 0 16px 40px rgba(37, 71, 245, 0.55);
 
+  /* First-visit tour (spotlight walkthrough on /cases) */
+  --tour-dim: rgba(6, 10, 28, 0.66); /* dimmed page around the spotlight */
+  --tour-ring: rgba(127, 157, 255, 0.9); /* spotlight highlight ring */
+  --r-spot: 16px; /* spotlight cutout radius */
+  --sh-tour-card: 0 26px 60px rgba(2, 5, 20, 0.45);
+
   /* Coming-soon card */
   --sh-soon: 0 8px 30px rgba(31, 74, 140, 0.09);
   --soon-glow: radial-gradient(
@@ -308,6 +314,23 @@ a:focus-visible {
   50% {
     transform: translate3d(0, -10px, 0);
   }
+}
+
+/* First-visit tour: the spotlight cutout and step card glide between targets.
+   Scoped classes (not Tailwind utilities) because the transition list is long
+   and shared by both elements; positions come from inline styles. */
+.cd-tour-move {
+  transition:
+    top 0.32s cubic-bezier(0.2, 0.8, 0.3, 1),
+    left 0.32s cubic-bezier(0.2, 0.8, 0.3, 1),
+    width 0.32s cubic-bezier(0.2, 0.8, 0.3, 1),
+    height 0.32s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.cd-spotlight {
+  box-shadow:
+    0 0 0 9999px var(--tour-dim),
+    0 0 0 2px var(--tour-ring);
 }
 
 /* Mount-entrance animations (fill-mode: both, so elements land at their end

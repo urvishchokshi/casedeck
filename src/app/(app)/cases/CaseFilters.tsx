@@ -145,6 +145,7 @@ export function CaseFilterBar({
         <div
           role="group"
           aria-label="Status"
+          data-tour="status"
           className="flex gap-[3px] rounded-[14px] bg-[var(--card)] p-1 [box-shadow:var(--sh)] max-desk:w-full"
         >
           {statusSegments.map((s) => (
@@ -201,7 +202,10 @@ export function CaseFilterBar({
             />
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-[7px]">
+          <div
+            data-tour="filters"
+            className="flex flex-wrap items-center justify-center gap-[7px]"
+          >
             {groups.map((group) => (
               <FilterDropdown
                 key={group.param}
@@ -238,7 +242,7 @@ export function CaseFilterBar({
           )}
         </div>
 
-        {children}
+        <div data-tour="rows">{children}</div>
       </div>
     </>
   );

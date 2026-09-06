@@ -11,6 +11,7 @@ import {
 } from "@/lib/case-filters";
 import { CaseFilterBar, type FilterGroup } from "./CaseFilters";
 import { CaseTable, type CaseTableRow } from "./CaseTable";
+import { CaseTour } from "./CaseTour";
 
 export const metadata = { title: "Case library" };
 
@@ -216,6 +217,7 @@ export default async function CasesPage({
     // layout-neutral.
     <div className="cd-fade-up flex flex-col gap-4">
       <PageTitle plain="Case " accent="Library" />
+      <CaseTour totalCases={totalCases} />
 
       <CaseFilterBar
         groups={filterGroups}
