@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { GUIDE_DONE_EVENT, GUIDE_KEY } from "@/components/HowItWorksGuide";
 
 /**
  * First-visit spotlight walkthrough (design: Case Library page, "Onboarding").
@@ -114,17 +115,32 @@ export function CaseTour({ totalCases }: { totalCases: number }) {
     setRect(null);
   }, []);
 
-  // First visit only, after the page's mount animations settle.
+  // First visit only, after the page's mount animations settle. When the
+  // "How CaseDeck works" guide hasn't been seen either, it goes first — the
+  // tour waits for its close event instead of starting its own timer.
   useEffect(() => {
     let seen = false;
+    let guideSeen = true;
     try {
       seen = localStorage.getItem(STORAGE_KEY) !== null;
+      guideSeen = localStorage.getItem(GUIDE_KEY) !== null;
     } catch {
       seen = true;
     }
     if (seen) return;
-    const t = setTimeout(() => goStep(0), 650);
-    return () => clearTimeout(t);
+    let t: ReturnType<typeof setTimeout> | undefined;
+    const start = () => {
+      t = setTimeout(() => goStep(0), 650);
+    };
+    if (guideSeen) {
+      start();
+      return () => clearTimeout(t);
+    }
+    window.addEventListener(GUIDE_DONE_EVENT, start, { once: true });
+    return () => {
+      window.removeEventListener(GUIDE_DONE_EVENT, start);
+      clearTimeout(t);
+    };
   }, [goStep]);
 
   // Rects are viewport-relative, so both resize and any scroll invalidate them.

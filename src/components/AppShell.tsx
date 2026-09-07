@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Brand } from "@/components/Brand";
+import {
+  GUIDE_DONE_EVENT,
+  GUIDE_KEY,
+  HowItWorksGuide,
+} from "@/components/HowItWorksGuide";
 import { createClient } from "@/lib/supabase/client";
 
 export interface ShellUser {
@@ -204,6 +209,53 @@ function NavLinks({
   );
 }
 
+function HowItWorksButton({
+  collapsed,
+  animateWidth,
+  className = "",
+  onClick,
+}: {
+  collapsed: boolean;
+  animateWidth: boolean;
+  className?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title="How it works"
+      className={`flex h-10 flex-none items-center gap-[11px] overflow-hidden rounded-xl px-3 text-[13px] text-[var(--muted-2)] hover:bg-[var(--nav-hover)] hover:text-[var(--accent)] ${
+        animateWidth
+          ? "transition-[width,color,background-color] desk:duration-[var(--t-slow)] desk:[transition-timing-function:var(--ease-in-out)]"
+          : "transition-colors"
+      } ${
+        collapsed
+          ? "desk:w-[42px] desk:self-center desk:justify-center desk:px-0"
+          : "desk:w-full desk:px-[13px]"
+      } ${className}`}
+    >
+      <svg width="17" height="17" viewBox="0 0 20 20" fill="none" className="shrink-0">
+        <circle cx="10" cy="10" r="7.4" stroke="currentColor" strokeWidth="1.7" />
+        <path
+          d="M8.1 7.9a1.95 1.95 0 013.85.45c0 1.3-1.95 1.6-1.95 2.9"
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinecap="round"
+        />
+        <path d="M10 14.1h.01" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+      </svg>
+      <span
+        className={`flex-1 whitespace-nowrap text-left ${
+          collapsed ? "desk:hidden" : ""
+        }`}
+      >
+        How it works
+      </span>
+    </button>
+  );
+}
+
 function ProfileCard({
   user,
   collapsed,
@@ -227,7 +279,7 @@ function ProfileCard({
 
   return (
     <div
-      className={`flex flex-none items-center gap-[11px] rounded-2xl bg-[var(--card)] p-3 [box-shadow:var(--sh)] desk:mt-auto ${
+      className={`flex flex-none items-center gap-[11px] rounded-2xl bg-[var(--card)] p-3 [box-shadow:var(--sh)] ${
         collapsed ? "desk:justify-center desk:p-2.5" : ""
       } ${className}`}
     >
@@ -273,10 +325,31 @@ export function AppShell({
   const [animateWidth, setAnimateWidth] = useState(false);
   // Mobile-only slide-out drawer (below desk:).
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // "How CaseDeck works" guide — auto-opens once per browser, and the
+  // sidebar/drawer "How it works" item reopens it anytime.
+  const [guideOpen, setGuideOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
   const hamburgerRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (window.localStorage.getItem(COLLAPSE_KEY) === "1") setCollapsed(true);
+  }, []);
+  // First visit only, shortly after mount (the guide runs before CaseTour,
+  // which waits for GUIDE_DONE_EVENT while the guide is unseen).
+  useEffect(() => {
+    let seen = true;
+    try {
+      seen = localStorage.getItem(GUIDE_KEY) !== null;
+    } catch {
+      // Private mode etc. — skip the auto-open.
+    }
+    if (seen) return;
+    const t = setTimeout(() => {
+      // Close the drawer if it beat the timer — otherwise both Escape
+      // listeners would catch one keypress and mark the guide seen unread.
+      setDrawerOpen(false);
+      setGuideOpen(true);
+    }, 450);
+    return () => clearTimeout(t);
   }, []);
   useEffect(() => {
     if (!drawerOpen) return;
@@ -301,6 +374,16 @@ export function AppShell({
     setDrawerOpen(false);
     hamburgerRef.current?.focus();
   };
+  // Stable so the guide's Escape-listener effect doesn't re-bind per render.
+  const closeGuide = useCallback(() => {
+    try {
+      localStorage.setItem(GUIDE_KEY, "1");
+    } catch {
+      // Private mode etc. — the guide just auto-opens again next visit.
+    }
+    setGuideOpen(false);
+    window.dispatchEvent(new Event(GUIDE_DONE_EVENT));
+  }, []);
 
   return (
     <div
@@ -369,6 +452,13 @@ export function AppShell({
             dataTour="nav"
           />
 
+          <HowItWorksButton
+            collapsed={collapsed}
+            animateWidth={animateWidth}
+            className="max-desk:hidden desk:mt-auto"
+            onClick={() => setGuideOpen(true)}
+          />
+
           <ProfileCard
             user={user}
             collapsed={collapsed}
@@ -417,13 +507,25 @@ export function AppShell({
                 onNavigate={closeDrawer}
               />
 
-              <ProfileCard user={user} collapsed={false} className="mt-auto" />
+              <HowItWorksButton
+                collapsed={false}
+                animateWidth={false}
+                className="mt-auto"
+                onClick={() => {
+                  closeDrawer();
+                  setGuideOpen(true);
+                }}
+              />
+
+              <ProfileCard user={user} collapsed={false} />
             </div>
           </div>
         )}
 
         <main className="flex min-w-0 flex-1 flex-col gap-4">{children}</main>
       </div>
+
+      <HowItWorksGuide open={guideOpen} onClose={closeGuide} />
     </div>
   );
 }

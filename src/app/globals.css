@@ -127,6 +127,12 @@
   --r-hero: 22px; /* center fan card */
   --sh-cta: 0 16px 40px rgba(37, 71, 245, 0.55);
 
+  /* How-it-works guide (onboarding popup) */
+  --overlay-guide: rgba(6, 10, 28, 0.74); /* darker than --overlay, per design */
+  --sh-guide: 0 40px 100px rgba(2, 5, 20, 0.6);
+  --r-sheet: 22px; /* mobile bottom-sheet top corners */
+  --guide-contact-label: #8fa3d8; /* label on the dark contact card */
+
   /* First-visit tour (spotlight walkthrough on /cases) */
   --tour-dim: rgba(6, 10, 28, 0.66); /* dimmed page around the spotlight */
   --tour-ring: rgba(127, 157, 255, 0.9); /* spotlight highlight ring */
