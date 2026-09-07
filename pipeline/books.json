@@ -3,5 +3,15 @@
     "slug": "iim-a",
     "name": "IIM Ahmedabad Casebook 2025-26",
     "college": "IIM Ahmedabad"
+  },
+  {
+    "slug": "iim-b",
+    "name": "IIM Bangalore Casebook 2025-26",
+    "college": "IIM Bangalore"
+  },
+  {
+    "slug": "iim-c",
+    "name": "IIM Calcutta Casebook 2025-26",
+    "college": "IIM Calcutta"
   }
 ]
