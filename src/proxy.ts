@@ -99,8 +99,10 @@ export const config = {
     /*
      * Run on everything except static assets:
      * - _next/static, _next/image
+     * - _vercel (analytics beacons — /_vercel/insights/view has no extension
+     *   and must not be auth-redirected for signed-out visitors on /login)
      * - favicon.ico and any file with an extension (images, fonts, …)
      */
-    "/((?!_next/static|_next/image|favicon\\.ico|.*\\..*).*)",
+    "/((?!_next/static|_next/image|_vercel|favicon\\.ico|.*\\..*).*)",
   ],
 };
