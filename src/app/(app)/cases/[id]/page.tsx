@@ -3,10 +3,15 @@ import { notFound } from "next/navigation";
 import { ImageCard } from "@/components/ImageCard";
 import { Pill } from "@/components/ui/Pill";
 import { RatingPill } from "@/components/RatingPill";
+import {
+  buildPracticePrompt,
+  splitProblemStatement,
+} from "@/lib/practice-prompt";
 import { createClient } from "@/lib/supabase/server";
 import type { Case } from "@/lib/types";
 import { Transcript } from "./Transcript";
 import { CaseActions, type CaseProgressState } from "./CaseActions";
+import { PracticeWithAI } from "./PracticeWithAI";
 
 type CaseDetailRow = Case & { casebook: { name: string } | null };
 
@@ -95,12 +100,18 @@ export default async function CaseDetailPage({
     }
   }
 
-  // When prompt is missing the first transcript turn stands in for it — drop
-  // that turn from the transcript so it doesn't render twice.
-  const promptText = c.prompt ?? c.transcript[0]?.text ?? null;
-  const transcriptTurns = c.prompt ? c.transcript : c.transcript.slice(1);
+  // When prompt is missing the first interviewer turn stands in for it and
+  // leaves the transcript so it doesn't render twice — the same split the
+  // practice prompt uses, so the page and the AI interviewer agree.
+  const { problemStatement: promptText, turns: transcriptTurns } =
+    splitProblemStatement(c.prompt, c.transcript);
 
   const [titleLead, titleLast] = splitTitle(c.title);
+  const casebookName = c.casebook?.name ?? "Unknown casebook";
+
+  // Built here and handed to the client card as a prop only — the text is
+  // never rendered (see PracticeWithAI).
+  const practicePrompt = buildPracticePrompt({ ...c, casebookName });
 
   return (
     // Matches the shell <main>'s flex column so the fade-up wrapper is
@@ -118,7 +129,7 @@ export default async function CaseDetailPage({
 
       <div className="pb-0.5 pt-1.5 text-center">
         <p className="text-[12.5px] text-[var(--muted-2)]">
-          {c.casebook?.name ?? "Unknown casebook"} · p. {c.source_start_page}
+          {casebookName} · p. {c.source_start_page}
         </p>
         <h1 className="mx-auto mt-2 max-w-[900px] break-words text-[clamp(30px,7vw,52px)] leading-[1.04] tracking-[-0.03em]">
           {titleLead}
@@ -156,6 +167,9 @@ export default async function CaseDetailPage({
             </p>
           </section>
         )}
+
+        {/* Same gate as the Prompt card: no problem statement, nothing to run. */}
+        {promptText && <PracticeWithAI prompt={practicePrompt} />}
 
         {transcriptTurns.length > 0 && <Transcript turns={transcriptTurns} />}
 
