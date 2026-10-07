@@ -9,8 +9,10 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   {
     key: "Permissions-Policy",
+    // microphone=(self): the in-app voice interviewer on /cases/[id] needs
+    // getUserMedia on our own origin; still denied to any embedded frame.
     value:
-      "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()",
+      "camera=(), microphone=(self), geolocation=(), payment=(), usb=(), browsing-topics=()",
   },
 ];
 

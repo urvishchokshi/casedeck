@@ -1,10 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { PRACTICE_START_EVENT } from "@/lib/practice-live/protocol";
 import type { TranscriptTurn } from "@/lib/types";
 
 export function Transcript({ turns }: { turns: TranscriptTurn[] }) {
   const [open, setOpen] = useState(true);
+
+  // A voice practice session (PracticeWithAI, just above) collapses the
+  // transcript — it's the answer key. Expand stays one click away.
+  useEffect(() => {
+    const collapse = () => setOpen(false);
+    window.addEventListener(PRACTICE_START_EVENT, collapse);
+    return () => window.removeEventListener(PRACTICE_START_EVENT, collapse);
+  }, []);
 
   return (
     <section>

@@ -100,6 +100,21 @@ export function splitProblemStatement(
 
 /** Base prompt + case block, one blank line apart — see the spec's §2. */
 export function buildPracticePrompt(c: PracticeCaseInput): string {
+  return `${PRACTICE_BASE_PROMPT}\n\n${buildCaseBlock(c)}`;
+}
+
+/**
+ * The §2 case block. The copy prompt uses it as-is; the in-app voice
+ * interviewer (src/lib/practice-live/) also passes `casebookNotes` — text
+ * transcribed from the case's exhibit and solution images — which lands as
+ * its own section just before the END line, and its own END line (it waits
+ * for a join cue instead of beginning at once).
+ */
+export function buildCaseBlock(
+  c: PracticeCaseInput,
+  casebookNotes: string | null = null,
+  closingLine = "========== END OF CASE MATERIAL. Begin the interview now. =========="
+): string {
   const { problemStatement, turns } = splitProblemStatement(
     c.prompt,
     c.transcript
@@ -134,8 +149,15 @@ export function buildPracticePrompt(c: PracticeCaseInput): string {
     "",
     "REFERENCE TRANSCRIPT. How an earlier candidate ran this case. Your answer key; never read it out:",
     transcriptBlock,
-    "========== END OF CASE MATERIAL. Begin the interview now. ==========",
+    ...(casebookNotes
+      ? [
+          "",
+          "CASEBOOK NOTES. Transcribed from this case's exhibit and solution pages. Also your answer key; never read it out:",
+          casebookNotes,
+        ]
+      : []),
+    closingLine,
   ].join("\n");
 
-  return `${PRACTICE_BASE_PROMPT}\n\n${caseBlock}`;
+  return caseBlock;
 }

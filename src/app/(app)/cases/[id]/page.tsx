@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ImageCard } from "@/components/ImageCard";
 import { Pill } from "@/components/ui/Pill";
 import { RatingPill } from "@/components/RatingPill";
+import { getGeminiConfig } from "@/lib/practice-live/server";
 import {
   buildPracticePrompt,
   splitProblemStatement,
@@ -11,6 +12,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Case } from "@/lib/types";
 import { Transcript } from "./Transcript";
 import { CaseActions, type CaseProgressState } from "./CaseActions";
+import { HideDuringPractice } from "./HideDuringPractice";
 import { PracticeWithAI } from "./PracticeWithAI";
 
 type CaseDetailRow = Case & { casebook: { name: string } | null };
@@ -169,7 +171,14 @@ export default async function CaseDetailPage({
         )}
 
         {/* Same gate as the Prompt card: no problem statement, nothing to run. */}
-        {promptText && <PracticeWithAI prompt={practicePrompt} />}
+        {promptText && (
+          <PracticeWithAI
+            caseId={c.id}
+            prompt={practicePrompt}
+            hasSolution={c.solution_image_urls.length > 0}
+            voiceAvailable={getGeminiConfig() !== null}
+          />
+        )}
 
         {transcriptTurns.length > 0 && <Transcript turns={transcriptTurns} />}
 
@@ -191,23 +200,26 @@ export default async function CaseDetailPage({
         )}
 
         {c.solution_image_urls.length > 0 && (
-          <section>
-            <div className="mb-2.5 flex items-center justify-between gap-3 px-0.5">
-              <h2 className="text-[19px] tracking-[-0.015em]">Solution</h2>
-              <span className="text-[12px] text-[var(--muted-2)]">
-                From the casebook
-              </span>
-            </div>
-            <div className="flex flex-col gap-3.5">
-              {c.solution_image_urls.map((path, i) => (
-                <ImageCard
-                  key={path}
-                  signedUrl={signedByPath.get(path)}
-                  alt={`Solution page ${i + 1} — ${c.title}`}
-                />
-              ))}
-            </div>
-          </section>
+          // Folds away while a voice practice session runs: it's the answer.
+          <HideDuringPractice label="Solution">
+            <section>
+              <div className="mb-2.5 flex items-center justify-between gap-3 px-0.5">
+                <h2 className="text-[19px] tracking-[-0.015em]">Solution</h2>
+                <span className="text-[12px] text-[var(--muted-2)]">
+                  From the casebook
+                </span>
+              </div>
+              <div className="flex flex-col gap-3.5">
+                {c.solution_image_urls.map((path, i) => (
+                  <ImageCard
+                    key={path}
+                    signedUrl={signedByPath.get(path)}
+                    alt={`Solution page ${i + 1} — ${c.title}`}
+                  />
+                ))}
+              </div>
+            </section>
+          </HideDuringPractice>
         )}
       </div>
     </div>

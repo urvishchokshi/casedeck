@@ -16,7 +16,7 @@ Case interview preparation platform for ISB students — a central place to brow
 
 ```bash
 npm install
-cp .env.example .env.local   # fill in Supabase values
+cp .env.example .env.local   # fill in Supabase values (+ GEMINI_API_KEY for voice practice)
 npm run dev
 ```
 
@@ -40,6 +40,7 @@ Checklist for a fresh production deployment:
    - `NEXT_PUBLIC_SITE_URL` — the canonical production URL, no trailing slash (e.g. `https://casedeck.example.com`). Required: metadata derives from it, and it backs auth redirects. Previews fall back to `VERCEL_URL` automatically.
      - ⚠️ **`NEXT_PUBLIC_*` vars are inlined at build time.** Adding or changing this value in the Vercel dashboard does nothing until you **redeploy** — the running bundle keeps the value it was built with (or `undefined`), even though the dashboard shows it set. A `siteOrigin: NEXT_PUBLIC_SITE_URL is not set in this build` warning means exactly that; look for it in the **build log** first (it fires at module scope via `metadataBase`), then on lambda cold starts.
      - Auth redirect origins resolve `x-forwarded-host` first (see `src/lib/site-url.ts`), so login still lands on the right host even if this var is missing — but set it anyway, since metadata derives from it alone.
+   - `GEMINI_API_KEY` — server-only Gemini key (from https://aistudio.google.com/apikey) for the **Practice with AI** voice interviewer on `/cases/[id]`. Unset → voice practice shows "not set up"; the copy-prompt fallback still works. Optional overrides `GEMINI_LIVE_MODEL` / `GEMINI_NOTES_MODEL` / `GEMINI_LIVE_VOICE` — see `docs/practice-with-ai-voice.md`. Vercel only applies env changes to new deployments, so redeploy after setting it.
 2. **Supabase → Authentication → URL Configuration**
    - Site URL = the production URL
    - Redirect URLs must include `https://<domain>/auth/callback` (keep `http://localhost:3000/auth/callback` for local dev)
